@@ -1,0 +1,163 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String           @id @default(cuid())
+  name            String           @default("Engineer")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  dsaQuestions    DSAQuestion[]
+  projects        Project[]
+  interviewTopics InterviewTopic[]
+  workSessions    WorkSession[]
+  dailyReviews    DailyReview[]
+  roadmapItems    RoadmapItem[]
+  parkedIdeas     ParkedIdea[]
+}
+
+model DSAQuestion {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  number          Int       // 1 to 80
+  topic           String    // Array, HashMap, Two Pointer, Sliding Window, Binary Search, Stack, Queue, LinkedList, Recursion
+  title           String
+  difficulty      String    // Easy, Medium, Hard
+  problemUrl      String?
+  status          String    @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, SOLVED, NEEDS_REVISION
+  solvedMyself    Boolean   @default(true) // true = solved myself, false = needed help
+  solution        String?
+  approach        String?
+  mistake         String?
+  timeComplexity  String?   // O(N), O(log N), etc.
+  spaceComplexity String?   // O(1), O(N), etc.
+  dateSolved      DateTime?
+  needsRevision   Boolean   @default(false)
+  revisionNotes   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Project {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String           // e.g. "Employee Grievance Management System"
+  description String?
+  status      String           @default("IN_PROGRESS") // PLANNED, IN_PROGRESS, COMPLETED
+  githubUrl   String?
+  demoUrl     String?
+  isFlagship  Boolean          @default(true)
+  features    ProjectFeature[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model ProjectFeature {
+  id             String    @id @default(cuid())
+  projectId      String
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category       String    @default("CORE") // CORE, GIS, REPORTS, METER, FUTURE
+  name           String
+  description    String?
+  status         String    @default("PLANNED") // IDEA, PLANNED, DEVELOPMENT, TESTING, COMPLETE
+  priority       String    @default("HIGH") // HIGH, MEDIUM, LOW
+  progress       Int       @default(0) // 0 - 100%
+  targetDate     DateTime?
+  nextAction     String?   // Concrete next engineering task to code
+  technicalNotes String?
+  isMvp          Boolean   @default(true) // false for future ideas
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model InterviewTopic {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category       String    // FRONTEND, BACKEND, CODING, CS_FUNDAMENTALS
+  name           String    // JavaScript, React, Node.js, PostgreSQL, etc.
+  status         String    @default("LEARNING") // NOT_STARTED, LEARNING, PRACTICED, INTERVIEW_READY
+  confidence     Int       @default(3) // 1 to 5
+  priority       String    @default("HIGH") // CRITICAL, HIGH, MEDIUM, LOW
+  phase          String    @default("PHASE_1") // PHASE_1 (current month), PHASE_2 (next month)
+  lastStudied    DateTime?
+  nextReview     DateTime?
+  notes          String?
+  keyQuestions   String?
+  practicalTips  String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model WorkSession {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date             String    // YYYY-MM-DD
+  category         String    // DSA, PROJECT, INTERVIEW, OTHER
+  durationMinutes  Int
+  taskTitle        String
+  notes            String?
+  dsaQuestionId    String?
+  projectFeatureId String?
+  createdAt        DateTime  @default(now())
+}
+
+model DailyReview {
+  id                      String   @id @default(cuid())
+  userId                  String
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date                    String   // YYYY-MM-DD
+  targetHours             Float
+  actualHours             Float
+  energy                  Int      @default(3) // 1 to 5
+  focus                   Int      @default(3) // 1 to 5
+  completedPlanned        Boolean  @default(false)
+  spentTooMuchTimeDeciding Boolean  @default(false)
+  didDsa                  Boolean  @default(false)
+  didProject              Boolean  @default(false)
+  didInterview            Boolean  @default(false)
+  oneThingLearned         String?
+  oneMistake              String?
+  tomorrowPriority        String?
+  planningChanges         Int      @default(0) // Count of roadmap/task re-organizations
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model ParkedIdea {
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title              String
+  category           String    @default("TECH_IDEA") // TECH_STACK, COURSE, PROJECT_IDEA, TOOL, GENERAL
+  notes              String?
+  status             String    @default("PARKED") // PARKED, GRADUATED, DISMISSED
+  graduatedFeatureId String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model RoadmapItem {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phase       String    @default("PHASE_1") // PHASE_1 (Current Month), PHASE_2 (Next Month)
+  name        String
+  category    String    // DSA, PROJECT, INTERVIEW, CS_CORE
+  priority    String    @default("PRIMARY") // PRIMARY, SECONDARY, UPCOMING
+  status      String    @default("ACTIVE") // ACTIVE, COMPLETED, QUEUED
+  targetDate  DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}

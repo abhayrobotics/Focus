@@ -1,0 +1,643 @@
+Yes. As your mentor, I would change one thing in how you approach GridOps:
+Do not treat it as a project you are going to code. Treat it as a product you are engineering.
+That distinction will dramatically improve how you present yourself.
+A recruiter sees:
+“Built an AI-powered utility management app.”
+A senior engineer sees:
+“This candidate identified a workflow problem, modeled the domain, made explicit architectural trade-offs, implemented a reliable workflow, and can explain why every major design decision exists.”
+That second story is what we want.
+1. Your goal should be bigger than “finish the project”
+For your target roles, GridOps should demonstrate five things:
+Product thinkingCan you identify what actually matters to the user?
+Engineering judgmentCan you make sensible technical trade-offs?
+ExecutionCan you take an idea from design to deployed software?
+DepthDo you understand the code rather than just generating it?
+CommunicationCan another engineer understand your system from your documentation?
+So I would deliberately build two products at the same time:
+Product A
+The actual GridOps application.
+Product B
+The engineering story surrounding GridOps.
+Product B is what creates visibility and confidence.
+2. Before writing code, create a docs/ folder
+Your repository should eventually look something like:
+gridops/
+│
+├── frontend/
+├── backend/
+├── docs/
+│   ├── 01-product-requirements.md
+│   ├── 02-user-flows.md
+│   ├── 03-domain-model.md
+│   ├── 04-architecture.md
+│   ├── 05-database-design.md
+│   ├── 06-api-design.md
+│   ├── 07-security.md
+│   ├── 08-testing-strategy.md
+│   ├── 09-architecture-decisions/
+│   │   ├── ADR-001-modular-monolith.md
+│   │   ├── ADR-002-postgresql.md
+│   │   └── ADR-003-rest-api.md
+│   └── 10-future-roadmap.md
+│
+└── README.md
+But don't write 100 pages.
+Each document should answer a real engineering question.
+3. Document #1 — Problem statement
+This should come before architecture.
+Write something like:
+Problem
+Utility-office workflows often involve cases moving between people/offices, with deadlines, documents and physical work. Without centralized visibility, it becomes difficult to determine:
+where a case currently resides
+who is responsible
+how long it has been pending
+which items are overdue
+what action is required next
+Product goal
+GridOps provides a centralized operational view of grievances and their lifecycle from creation to closure.
+Then define:
+MVP
+In scope
+grievance creation
+assignment
+forwarding
+status tracking
+deadline tracking
+history
+attachments
+dashboard
+Out of scope
+GIS
+meter challenges
+AI
+mobile application
+real-time collaboration
+This is surprisingly important.
+Senior engineers are often judged by what they choose NOT to build.
+4. Design the workflow before designing the database
+This is where I want you to personally do the work.
+Take one real scenario:
+A grievance enters a section office and eventually gets resolved.
+Draw it.
+                    ┌───────────┐
+                    │ Received  │
+                    └─────┬─────┘
+                          ↓
+                    ┌───────────┐
+                    │ Assigned  │
+                    └─────┬─────┘
+                          ↓
+                   ┌────────────┐
+                   │ In Progress│
+                   └──────┬─────┘
+                          ↓
+                    ┌──────────┐
+                    │ Forwarded│
+                    └────┬─────┘
+                         ↓
+                    ┌─────────┐
+                    │Resolved │
+                    └────┬────┘
+                         ↓
+                     ┌───────┐
+                     │Closed │
+                     └───────┘
+Then ask:
+Who can perform each transition?
+What information is required?
+Can it go backwards?
+What happens when the deadline passes?
+Who is accountable?
+What should be recorded in history?
+These questions are much more valuable than deciding whether to use Redux or Zustand.
+5. Then design the domain model
+Only after you understand the workflow.
+Start with:
+User
+Office
+Grievance
+GrievanceHistory
+Attachment
+Category
+Draw relationships.
+Office
+  │
+  └──── User
+User
+  │
+  ├──── creates ──── Grievance
+  └──── assigned ─── Grievance
+Grievance
+  ├──── has ──────── History
+  └──── has ──────── Attachments
+Then identify the source of truth.
+For example:
+Grievance
+id
+referenceNumber
+title
+description
+categoryId
+priority
+status
+createdBy
+assignedTo
+officeId
+deadline
+createdAt
+updatedAt
+GrievanceHistory
+id
+grievanceId
+actorId
+action
+fromStatus
+toStatus
+fromUser
+toUser
+comment
+createdAt
+That History table is a particularly good engineering decision because it gives you an auditable lifecycle rather than only the latest state.
+6. Design the API before implementation
+This is another thing I want you to do.
+Create an API contract.
+For example:
+POST   /api/grievances
+GET    /api/grievances
+GET    /api/grievances/:id
+PATCH  /api/grievances/:id
+POST   /api/grievances/:id/assign
+POST   /api/grievances/:id/forward
+POST   /api/grievances/:id/resolve
+GET    /api/grievances/:id/history
+POST   /api/grievances/:id/attachments
+For each endpoint, document:
+Purpose
+Input
+Output
+Authorization
+Possible errors
+You can then ask AI:
+“Implement this API contract.”
+That's an excellent division of labor.
+7. Don't let AI make architectural decisions for you
+This is one of the most important rules I would give you.
+AI is extremely useful at:
+“Implement this.”
+AI is much more dangerous when you ask:
+“What architecture should I use?”
+because it will happily produce a technically impressive architecture that you don't need.
+For GridOps, your initial architecture should be deliberately boring:
+React + TypeScript
+        ↓
+REST API
+        ↓
+Node.js + Express
+        ↓
+Prisma
+        ↓
+PostgreSQL
+One backend.
+One database.
+One frontend.
+Modular codebase.
+That's enough.
+Then document:
+Why did we choose a modular monolith?
+Answer:
+The MVP has a small engineering team and a single cohesive domain. A modular monolith minimizes operational complexity while preserving clear domain boundaries that can be extracted later if required.
+Now you've demonstrated engineering judgment.
+8. Start using ADRs
+This is one of the easiest ways to make the repo look professionally engineered.
+ADR = Architecture Decision Record
+Example:
+ADR-001: Use a modular monolith
+Context
+GridOps MVP contains several related workflows but does not have independent scaling requirements.
+Decision
+Use one backend application organized by domain modules.
+Why
+simpler deployment
+easier local development
+lower infrastructure overhead
+clear boundaries
+sufficient for current scale
+Rejected alternative
+Microservices.
+Reason rejected
+Operational complexity isn't justified at MVP scale.
+That's a very strong interview artifact.
+9. Design the UI as an operational tool, not a pretty dashboard
+This is where I want your product thinking to show.
+Don't start with:
+“What beautiful dashboard can I make?”
+Start with:
+“What decision does the user need to make when they open the application?”
+Your answer is:
+What needs my attention?
+Therefore your dashboard should lead with:
+OVERDUE
+9
+DUE TODAY
+7
+PENDING
+42
+RESOLVED
+75
+Then:
+Attention Required
+Case
+Owner
+Deadline
+Status
+GR-1023
+JE Rahul
+Today
+Overdue
+GR-1031
+SDO
+Tomorrow
+Due Soon
+Only after that should you show charts.
+That's product design.
+10. Create user flows, not just screens
+Make a document like:
+Flow: Forward grievance
+Grievance Details
+       ↓
+Click "Forward"
+       ↓
+Select recipient
+       ↓
+Enter note
+       ↓
+Confirm
+       ↓
+Backend validates permission
+       ↓
+Update current owner
+       ↓
+Create history event
+       ↓
+Return updated grievance
+       ↓
+UI refreshes
+Now an interviewer can see that you think across:
+UI → API → business logic → database → audit → UI
+That's full-stack thinking.
+11. Explicitly document business rules
+This is where your utility domain knowledge becomes valuable.
+Create:
+Business Rules
+Example:
+BR-001
+A grievance must have an assigned owner before it can enter "In Progress".
+BR-002
+Only authorized users may forward a grievance.
+BR-003
+Every assignment/forward/status change must create a history record.
+BR-004
+Closed grievances cannot be edited except by authorized administrators.
+BR-005
+A grievance is overdue when current time > deadline and status is not Closed.
+This is excellent interview material.
+Because now you're not saying:
+“I made a CRUD application.”
+You're saying:
+“I implemented domain invariants.”
+12. Think carefully about dates and deadlines
+This is a deceptively good engineering problem.
+Don't just do:
+deadline < new Date()
+and move on.
+Think about:
+timezone
+date vs datetime
+business hours
+holidays
+deadline extension
+reopened cases
+overdue while pending
+completed after deadline
+You don't need to implement every complexity in September.
+But document what the MVP assumes.
+For example:
+MVP deadlines use calendar dates and IST. Holiday/business-hour calendars are intentionally deferred.
+That's good engineering.
+13. Build observability into the product
+Even for a portfolio project.
+You don't need a giant observability stack.
+At minimum:
+structured server logs
+request IDs
+error logging
+basic health endpoint
+Example:
+GET /health
+returns:
+{
+  "status": "ok",
+  "database": "connected"
+}
+Now you can talk about production readiness.
+14. Security should be designed, not added at the end
+Your documentation should include:
+Authentication
+JWT/session strategy.
+Authorization
+Role/permission checks.
+Input validation
+Zod or equivalent.
+File upload restrictions
+Allowed MIME types and size limits.
+Database
+Parameterized/ORM queries.
+Sensitive configuration
+Environment variables.
+Auditability
+Immutable history records.
+Again, this isn't about implementing enterprise-grade security.
+It's about demonstrating that security is part of your engineering model.
+15. Testing strategy
+Don't chase 90% coverage.
+Test the things that matter.
+Unit tests
+Deadline calculation.
+Status transitions.
+Permission checks.
+Integration tests
+Create grievance.
+Forward grievance.
+Close grievance.
+Unauthorized action.
+E2E test
+One complete scenario:
+Login
+→ Create grievance
+→ Assign
+→ Forward
+→ Resolve
+→ Close
+That single flow demonstrates enormous value.
+16. Use AI in a very specific workflow
+Here's exactly how I'd have you work.
+Step 1 — YOU think
+Write:
+I need an endpoint that forwards a grievance from one employee to another.
+Step 2 — YOU define behavior
+Input:
+recipientId
+comment
+Rules:
+current user must have permission
+grievance cannot be closed
+recipient must belong to allowed office
+Side effects:
+update assignedTo
+create history record
+Step 3 — AI implements
+Give AI the above and say:
+Implement this in the existing Express + Prisma architecture. Do not change the architecture. Explain the files you changed.
+Step 4 — YOU review
+Ask:
+Why did you put this validation here?
+What happens if the database update succeeds but history creation fails?
+Is this transaction-safe?
+Now you're learning from AI instead of becoming dependent on it.
+17. Start maintaining an engineering journal
+This is underrated.
+Create:
+docs/engineering-log.md
+Every few days write:
+Problem
+Forwarding occasionally produced inconsistent history.
+Investigation
+The grievance update and history insert were separate DB operations.
+Decision
+Wrap them in a Prisma transaction.
+Result
+State transition and history entry are now atomic.
+That single entry is worth more than ten lines on your resume.
+Because that's real engineering reasoning.
+18. Create a "Trade-offs" document
+This will make you look much more senior.
+Example:
+Decision
+Choice
+Alternative
+Why
+Backend
+Express
+NestJS
+Smaller MVP
+Database
+PostgreSQL
+MongoDB
+Relational workflow
+ORM
+Prisma
+Raw SQL
+Productivity/type safety
+Architecture
+Monolith
+Microservices
+Scale doesn't justify complexity
+API
+REST
+GraphQL
+Simple resource-based domain
+State
+RTK Query
+Custom fetching
+Server-state management
+Notice something:
+You don't need the technology with the most buzzwords.
+You need a reason for the technology you chose.
+19. Add metrics to the product
+This is where your product story becomes stronger.
+Don't show meaningless:
+“Users: 23”
+Instead show operational metrics:
+Grievance SLA
+Total grievances       126
+Resolved               75
+Pending                42
+Overdue                 9
+Avg resolution time    3.4 days
+Later:
+By office
+Office A    5 overdue
+Office B    2 overdue
+Office C    1 overdue
+Office D    1 overdue
+Now the dashboard is actually helping management.
+20. Your README should tell a story
+Your README shouldn't begin:
+“This is a React project created using Vite.”
+That's developer boilerplate.
+Start with:
+GridOps
+Utility Operations & Field Intelligence Platform
+A workflow-driven platform for tracking utility grievances from origin to closure, with ownership, deadlines, documents and audit history.
+Then:
+Problem
+Solution
+Demo
+Architecture
+Core workflow
+Key engineering decisions
+Screenshots
+API
+Testing
+Roadmap
+Why this architecture?
+This immediately gives recruiters context.
+21. Show the architecture visually
+Make one clean diagram:
+┌─────────────────────────────┐
+│        React Frontend       │
+│                             │
+│ Dashboard / Grievances      │
+│ Forms / History / Files     │
+└──────────────┬──────────────┘
+               │ REST
+               ▼
+┌─────────────────────────────┐
+│      Express Backend        │
+│                             │
+│ Auth │ Grievance │ Files    │
+│ Workflow │ Dashboard        │
+└──────────────┬──────────────┘
+               │ Prisma
+               ▼
+┌─────────────────────────────┐
+│        PostgreSQL           │
+│                             │
+│ Users / Offices             │
+│ Grievances / History        │
+│ Attachments                 │
+└─────────────────────────────┘
+Then another diagram for the workflow.
+Then another for the database.
+Three good diagrams are better than twenty paragraphs.
+22. Your Git history also matters
+Don't finish 30 days of development and upload 5 giant commits.
+Make meaningful commits:
+feat(auth): add JWT authentication
+feat(grievances): add grievance creation flow
+feat(workflow): implement grievance assignment
+feat(workflow): add forwarding and audit history
+feat(dashboard): add overdue grievance metrics
+feat(files): add grievance attachments
+test(workflow): add grievance transition tests
+fix(deadline): handle overdue calculation
+This subtly communicates engineering discipline.
+And do not make fake historical commits just to look active. Your actual development history is more credible.
+23. Make decisions in public
+For visibility, you want evidence that you can communicate engineering work.
+Your GitHub can contain:
+README
+Product overview.
+Architecture diagram
+System design.
+ADRs
+Why you chose things.
+Demo video
+2–3 minutes.
+Engineering notes
+Problems and solutions.
+Screenshots
+Before/after and important workflows.
+Then a LinkedIn/portfolio project description can point to the engineering story rather than just the live URL.
+24. How I would divide your September effort
+This is the part I would be strict about.
+For every feature:
+30% thinking/design
+50% implementation
+20% review/testing/documentation
+And within implementation:
+AI can do most of the typing.
+But your thinking/design ratio should be high.
+You shouldn't spend four hours manually writing a form that AI can produce in twenty minutes.
+Spend that saved time understanding:
+Why is the form structured this way?
+What happens if the request fails?
+What is the database transaction boundary?
+What should the API return?
+That is where your engineering ability grows.
+25. Your September deliverables should therefore be more than the application
+By September 30, I would want your GitHub to contain:
+Application
+A deployed, working GridOps MVP.
+Product documentation
+Problem + scope + user flows.
+Engineering documentation
+Architecture + domain model + API + security + testing.
+Decision records
+At least 3–5 meaningful ADRs.
+Visual documentation
+Architecture + workflow + ER diagram.
+Demonstration
+A 2–3 minute product walkthrough.
+Engineering story
+2–5 short engineering notes describing real problems you encountered and solved.
+That's a portfolio package, not merely a GitHub project.
+26. What I want YOU to design personally
+This distinction is important.
+You own:
+Problem definition
+MVP scope
+User personas
+User workflows
+Business rules
+Wireframes
+Domain model
+API contracts
+Architecture choice
+Security model
+Trade-offs
+Test scenarios
+Product metrics
+AI owns:
+Boilerplate
+Component implementation
+CRUD code
+Form implementation
+API plumbing
+Prisma queries
+Validation implementation
+Tests
+Refactoring
+Documentation formatting
+That's the balance I would want from you.
+27. One more thing: don't pretend GridOps is already a commercial product
+This is very important for credibility.
+You know the utility domain, which gives you a valuable starting point.
+But unless you've actually validated GridOps with multiple organizations/users, don't write:
+“GridOps solves a major industry-wide problem.”
+Write:
+“GridOps is a domain-informed prototype designed around utility grievance and operational workflows.”
+Then, as you get feedback:
+Validated with X users
+Observed Y workflow issue
+Changed Z feature based on feedback
+That evolution will make your project much more credible.
+28. The story I want an interviewer to hear
+After you build this properly, I want you to be able to say:
+“I initially considered building a generic AI project-management system, but I realized I could build something much more domain-specific around utility operations. I started with grievance handling because the core problem wasn't creating records—it was maintaining visibility into ownership, forwarding, deadlines and pending cases.
+I modeled the grievance as a state machine and maintained an immutable activity history so we could answer not just the current state but how the case got there.
+For the MVP I deliberately chose a modular monolith with PostgreSQL rather than microservices because the domain didn't justify the operational complexity.
+I used AI extensively for implementation, but I defined the domain model, workflow rules, API contracts and architecture myself.
+After the MVP, the architecture allows us to add meter challenges, work orders and GIS as additional domains without rewriting the core system.”
+That is a very different candidate story from “I built a React app.”
+And that is exactly the direction I would push you toward.
+Your immediate next move
+Before writing the first line of GridOps code, create these five artifacts yourself:
+01-product-requirements.md
+02-user-flow.md
+03-domain-model.md
+04-wireframes.md
+05-architecture.md
+Then build from those documents.
+Your code should be the implementation of your design—not the place where the design is discovered.
+That one habit will probably have a bigger impact on your growth as an engineer than any additional framework you learn this month.
