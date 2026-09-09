@@ -185,7 +185,7 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
                 onClick={() => setSelectedTopic(selectedTopic === ts.topic ? 'ALL' : ts.topic)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all border ${
                   selectedTopic === ts.topic
-                    ? 'bg-brand-600 text-white border-brand-500 font-bold shadow-sm'
+                    ? 'btn-primary font-bold shadow-sm'
                     : 'bg-dark-850 text-slate-300 border-dark-800 hover:border-dark-700'
                 }`}
               >
@@ -251,8 +251,136 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
         </div>
       </div>
 
-      {/* 3. Question Table */}
-      <div className="panel overflow-hidden border border-dark-800">
+      {/* 3. Question Table (Desktop) & Full-Height Vertical Cards (Mobile) */}
+      {/* Mobile View: Vertical Full-Height Cards (No horizontal scroll) */}
+      <div className="block md:hidden space-y-3 w-full overflow-hidden">
+        {loading ? (
+          <div className="panel p-8 text-center text-slate-500 font-mono text-xs">
+            Loading questions...
+          </div>
+        ) : questions.length === 0 ? (
+          <div className="panel p-8 text-center text-slate-500 font-mono text-xs">
+            No questions found matching your filter criteria.
+          </div>
+        ) : (
+          questions.map((q) => {
+            const fallbackSearchUrl = `https://leetcode.com/problemset/all/?search=${q.leetcodeNumber || encodeURIComponent(q.title)}`;
+            const directUrl = q.problemUrl || fallbackSearchUrl;
+
+            return (
+              <div
+                key={q.id}
+                onClick={() => openQuestionModal(q)}
+                className="panel-card p-4 space-y-3 cursor-pointer group hover:border-brand-500/60 transition-all w-full overflow-hidden flex flex-col justify-between"
+              >
+                {/* Top Badge Row */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-mono text-xs font-bold text-slate-400">
+                      #{q.number}
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                      LC #{q.leetcodeNumber || q.number}
+                    </span>
+                    <span className={`badge ${getDifficultyBadge(q.difficulty)} text-[10px]`}>
+                      {q.difficulty}
+                    </span>
+                  </div>
+
+                  <span className={`badge ${getStatusBadge(q.status)} text-[10px]`}>
+                    {q.status.replace('_', ' ')}
+                  </span>
+                </div>
+
+                {/* Question Title & Revision Badge */}
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-bold text-white group-hover:text-brand-400 transition-colors leading-snug break-words flex-1">
+                      {q.title}
+                    </h3>
+                    {q.needsRevision && (
+                      <span className="badge badge-rose text-[9px] shrink-0">Revision</span>
+                    )}
+                  </div>
+
+                  {/* Trap Box (if present) */}
+                  {q.mistake && (
+                    <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/25 text-[11px] text-rose-300 font-mono leading-relaxed break-words">
+                      <span className="font-bold text-rose-400 mr-1">⚠️ Trap:</span>
+                      {q.mistake}
+                    </div>
+                  )}
+                </div>
+
+                {/* Topic & Complexity Metadata */}
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-dark-800/80 text-[11px] font-mono text-slate-400 flex-wrap">
+                  <span className="badge badge-slate text-[10px]">{q.topic}</span>
+
+                  <div className="flex items-center gap-2">
+                    {q.timeComplexity && (
+                      <span className="text-slate-400 text-[10px] bg-dark-950 px-1.5 py-0.5 rounded border border-dark-800">
+                        ⏱️ {q.timeComplexity}
+                      </span>
+                    )}
+                    {q.status === 'SOLVED' && (
+                      <span className="text-[10px] font-medium">
+                        {q.solvedMyself ? (
+                          <span className="text-emerald-400">✨ Self</span>
+                        ) : (
+                          <span className="text-amber-400">💡 Helped</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Toolbar */}
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-dark-800/80 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-1.5">
+                    <a
+                      href={directUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-secondary py-1.5 px-2.5 text-xs flex items-center gap-1 hover:text-brand-400"
+                      title={`Open LeetCode #${q.leetcodeNumber || q.number}`}
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>LeetCode</span>
+                    </a>
+                    <a
+                      href={fallbackSearchUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-dark-800 rounded-lg border border-dark-800"
+                      title="Search LeetCode"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => onOpenLogger('DSA', `DSA #${q.number} (LC #${q.leetcodeNumber || q.number}): ${q.title}`)}
+                      className="btn-secondary py-1.5 px-2.5 text-xs"
+                    >
+                      <span>Log Time</span>
+                    </button>
+                    <button
+                      onClick={() => openQuestionModal(q)}
+                      className="btn-primary py-1.5 px-3 text-xs font-bold"
+                    >
+                      <span>Solve / Notes</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop View: Full Data Table (Hidden on Mobile) */}
+      <div className="hidden md:block panel overflow-hidden border border-dark-800">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-dark-950/80 border-b border-dark-800 font-mono text-[11px] text-slate-400 uppercase">

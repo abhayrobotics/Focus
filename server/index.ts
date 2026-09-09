@@ -12,6 +12,7 @@ import { parkingLotRouter } from './routes/parkingLot.js';
 import { growthRouter } from './routes/growth.js';
 import { roadmapRouter } from './routes/roadmap.js';
 import { exportRouter } from './routes/export.js';
+import { applicationsRouter } from './routes/applications.js';
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use('/api/dashboard', dashboardRouter);
 app.use('/api/dsa', dsaRouter);
 app.use('/api/projects', projectsRouter);
 app.use('/api/interview', interviewRouter);
+app.use('/api/applications', applicationsRouter);
 app.use('/api/work-sessions', sessionsRouter);
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/parking-lot', parkingLotRouter);
@@ -51,15 +53,21 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
-const server = app.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`\n⚡ CareerOS Backend Server running at http://localhost:${PORT}`);
-  console.log(`🎯 API endpoints ready at http://localhost:${PORT}/api\n`);
-});
+export { app };
+export default app;
 
-server.on('error', (err: any) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`\n❌ Port ${PORT} is already in use by another process. Please close existing instances or free port ${PORT}.\n`);
-  } else {
-    console.error('Server error:', err);
-  }
-});
+// In local environment, start HTTP server
+if (!process.env.VERCEL) {
+  const server = app.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`\n⚡ CareerOS Backend Server running at http://localhost:${PORT}`);
+    console.log(`🎯 API endpoints ready at http://localhost:${PORT}/api\n`);
+  });
+
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n❌ Port ${PORT} is already in use by another process. Please close existing instances or free port ${PORT}.\n`);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+}

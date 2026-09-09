@@ -19,6 +19,7 @@ model User {
   dailyReviews    DailyReview[]
   roadmapItems    RoadmapItem[]
   parkedIdeas     ParkedIdea[]
+  applications    JobApplication[]
 }
 
 model DSAQuestion {
@@ -161,4 +162,41 @@ model RoadmapItem {
   notes       String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+model JobApplication {
+  id            String           @id @default(cuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName   String
+  role          String
+  location      String?          @default("Remote")
+  salaryRange   String?
+  platform      String           @default("LINKEDIN") // LINKEDIN, NAUKRI, INSTAHYRE, REFERRAL, DIRECT, WELLFOUND, OTHER
+  jobUrl        String?
+  resumeVersion String?
+  appliedDate   String           // YYYY-MM-DD
+  status        String           @default("APPLIED") // APPLIED, SHORTLISTED, OA_ROUND, TECH_ROUND_1, TECH_ROUND_2, MANAGERIAL_HR, OFFER, REJECTED, GHOSTED
+  contactPerson String?
+  contactEmail  String?
+  notes         String?
+  rounds        InterviewRound[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model InterviewRound {
+  id              String         @id @default(cuid())
+  applicationId   String
+  application     JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  roundNumber     Int            @default(1)
+  roundName       String         // e.g. "Screening Call", "Online Assessment", "Technical Round 1 (DSA)", "System Design Round", "HR Round"
+  status          String         @default("SCHEDULED") // SCHEDULED, CLEARED, FAILED, SKIPPED, PENDING_FEEDBACK
+  scheduledAt     DateTime?
+  interviewerName String?
+  questionsAsked  String?
+  feedback        String?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }

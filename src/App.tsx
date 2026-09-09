@@ -4,6 +4,7 @@ import {
   Code2,
   FolderGit2,
   Target,
+  Briefcase,
   Sparkles,
   Map,
 } from 'lucide-react';
@@ -15,6 +16,7 @@ import { DashboardScreen } from './screens/DashboardScreen';
 import { DsaScreen } from './screens/DsaScreen';
 import { ProjectsScreen } from './screens/ProjectsScreen';
 import { InterviewScreen } from './screens/InterviewScreen';
+import { ApplicationsScreen } from './screens/ApplicationsScreen';
 import { GrowthScreen } from './screens/GrowthScreen';
 import { RoadmapScreen } from './screens/RoadmapScreen';
 import { SessionLoggerModal } from './components/SessionLoggerModal';
@@ -115,6 +117,7 @@ export const App: React.FC = () => {
     { id: 'DSA', label: 'DSA', icon: <Code2 className="w-4 h-4" /> },
     { id: 'PROJECTS', label: 'Project', icon: <FolderGit2 className="w-4 h-4" /> },
     { id: 'INTERVIEW', label: 'Prep', icon: <Target className="w-4 h-4" /> },
+    { id: 'APPLICATIONS', label: 'Jobs', icon: <Briefcase className="w-4 h-4" /> },
     { id: 'GROWTH', label: 'Growth', icon: <Sparkles className="w-4 h-4" /> },
   ];
 
@@ -167,6 +170,10 @@ export const App: React.FC = () => {
 
           {activeTab === 'INTERVIEW' && (
             <InterviewScreen onOpenLogger={(cat, task) => handleOpenLogger(cat || 'INTERVIEW', task || '')} />
+          )}
+
+          {activeTab === 'APPLICATIONS' && (
+            <ApplicationsScreen onRefreshParent={handleRefresh} />
           )}
 
           {activeTab === 'GROWTH' && (

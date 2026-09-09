@@ -69,25 +69,39 @@ async function recalculateDailyReview(dateStr: string, userId?: string) {
   }
 }
 
-// 2. Fast Log a new work session (< 10s log)
+// 2. Fast Log a new work session (< 10s log) or clear/reset to 0 min
 sessionsRouter.post('/', async (req, res) => {
   try {
     const { category, durationMinutes, taskTitle, notes, date, dsaQuestionId, projectFeatureId } = req.body;
-    if (!category || !durationMinutes || !taskTitle) {
-      return res.status(400).json({ error: 'Category, durationMinutes, and taskTitle are required.' });
-    }
+    const sessionDate = date || format(new Date(), 'yyyy-MM-dd');
+    const numMinutes = parseInt(String(durationMinutes), 10);
 
     const user = await prisma.user.findFirst();
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
-    const sessionDate = date || format(new Date(), 'yyyy-MM-dd');
+    // If duration is 0, user wants to clear / reset logs for this date!
+    if (numMinutes === 0) {
+      await prisma.workSession.deleteMany({
+        where: { date: sessionDate },
+      });
+      await recalculateDailyReview(sessionDate, user.id);
+      return res.json({
+        success: true,
+        cleared: true,
+        message: `Cleared all logged work sessions for ${sessionDate}. Total is reset to 0m.`,
+      });
+    }
+
+    if (!category || isNaN(numMinutes) || !taskTitle) {
+      return res.status(400).json({ error: 'Category, durationMinutes, and taskTitle are required.' });
+    }
 
     const session = await prisma.workSession.create({
       data: {
         userId: user.id,
         date: sessionDate,
         category,
-        durationMinutes: parseInt(durationMinutes, 10),
+        durationMinutes: numMinutes,
         taskTitle,
         notes: notes || '',
         dsaQuestionId: dsaQuestionId || null,
@@ -103,6 +117,24 @@ sessionsRouter.post('/', async (req, res) => {
   }
 });
 
+// 2b. Clear / Reset all work sessions for a specific date
+sessionsRouter.delete('/date/:date', async (req, res) => {
+  try {
+    const { date } = req.params;
+    const user = await prisma.user.findFirst();
+    await prisma.workSession.deleteMany({
+      where: { date },
+    });
+    if (user) {
+      await recalculateDailyReview(date, user.id);
+    }
+    res.json({ success: true, message: `Cleared all work sessions for ${date}. Reset to 0m.` });
+  } catch (err: any) {
+    console.error(`Error clearing sessions for ${req.params.date}:`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 3. Update / Change an existing work session
 sessionsRouter.put('/:id', async (req, res) => {
   try {
@@ -110,11 +142,20 @@ sessionsRouter.put('/:id', async (req, res) => {
     const existing = await prisma.workSession.findUnique({ where: { id: req.params.id } });
     if (!existing) return res.status(404).json({ error: 'Session not found.' });
 
+    const numMinutes = durationMinutes !== undefined ? parseInt(String(durationMinutes), 10) : existing.durationMinutes;
+
+    // If updated to 0 min, delete this session and recalculate
+    if (numMinutes === 0) {
+      await prisma.workSession.delete({ where: { id: req.params.id } });
+      await recalculateDailyReview(existing.date);
+      return res.json({ success: true, deleted: true, message: 'Session deleted (reset to 0m).' });
+    }
+
     const updated = await prisma.workSession.update({
       where: { id: req.params.id },
       data: {
         category: category !== undefined ? category : existing.category,
-        durationMinutes: durationMinutes !== undefined ? parseInt(durationMinutes, 10) : existing.durationMinutes,
+        durationMinutes: numMinutes,
         taskTitle: taskTitle !== undefined ? taskTitle : existing.taskTitle,
         notes: notes !== undefined ? notes : existing.notes,
         date: date !== undefined ? date : existing.date,

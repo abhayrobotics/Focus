@@ -224,6 +224,14 @@ export const api = {
     return res.json();
   },
 
+  clearDateWorkSessions: async (date: string): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch(`${API_BASE}/work-sessions/date/${encodeURIComponent(date)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Failed to clear sessions for date');
+    return res.json();
+  },
+
   deduplicateWorkSessions: async (): Promise<{ success: boolean; removedCount: number; message: string }> => {
     const res = await fetch(`${API_BASE}/work-sessions/deduplicate`, {
       method: 'POST',
@@ -310,6 +318,67 @@ export const api = {
   getRoadmap: async () => {
     const res = await fetch(`${API_BASE}/roadmap`);
     if (!res.ok) throw new Error('Failed to fetch roadmap');
+    return res.json();
+  },
+
+  // Job Applications & Interview Process Tracker
+  getApplications: async (): Promise<{ applications: JobApplication[]; stats: ApplicationStats }> => {
+    const res = await fetch(`${API_BASE}/applications`);
+    if (!res.ok) throw new Error('Failed to fetch applications');
+    return res.json();
+  },
+
+  createApplication: async (data: Partial<JobApplication> & { initialRound?: Partial<InterviewRound> }): Promise<JobApplication> => {
+    const res = await fetch(`${API_BASE}/applications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to create application');
+    return res.json();
+  },
+
+  updateApplication: async (id: string, data: Partial<JobApplication>): Promise<JobApplication> => {
+    const res = await fetch(`${API_BASE}/applications/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to update application');
+    return res.json();
+  },
+
+  deleteApplication: async (id: string): Promise<{ success: boolean; message?: string }> => {
+    const res = await fetch(`${API_BASE}/applications/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete application');
+    return res.json();
+  },
+
+  addInterviewRound: async (applicationId: string, data: Partial<InterviewRound>): Promise<{ round: InterviewRound; application: JobApplication }> => {
+    const res = await fetch(`${API_BASE}/applications/${applicationId}/rounds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to add interview round');
+    return res.json();
+  },
+
+  updateInterviewRound: async (applicationId: string, roundId: string, data: Partial<InterviewRound>): Promise<{ round: InterviewRound; application: JobApplication }> => {
+    const res = await fetch(`${API_BASE}/applications/${applicationId}/rounds/${roundId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to update interview round');
+    return res.json();
+  },
+
+  deleteInterviewRound: async (applicationId: string, roundId: string): Promise<{ success: boolean; application: JobApplication }> => {
+    const res = await fetch(`${API_BASE}/applications/${applicationId}/rounds/${roundId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Failed to delete interview round');
     return res.json();
   },
 };

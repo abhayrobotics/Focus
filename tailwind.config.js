@@ -19,14 +19,14 @@ export default {
         textSecondary: '#9BAAB5',
         textMuted: '#64727D',
 
-        primary: '#4CC9B0',
-        primaryHover: '#63D8C0',
+        primary: '#0F766E',
+        primaryHover: '#115E59',
 
-        success: '#72D572',
-        warning: '#E5B85C',
-        danger: '#E57373',
-        info: '#6FA8DC',
-        focus: '#8B9CF6',
+        success: '#0F766E',
+        warning: '#D97706',
+        danger: '#DC2626',
+        info: '#0284C7',
+        focus: '#0F766E',
 
         // Dark tokens mapped to custom palette
         dark: {
@@ -43,19 +43,58 @@ export default {
           200: '#F8FAFC',
           100: '#FFFFFF',
         },
-        // Brand tokens mapped to primary (#4CC9B0) & primaryHover (#63D8C0)
+        // Unified High-contrast Green/Brand/Emerald/Teal tokens
         brand: {
-          50: '#E6F8F5',
-          100: '#C2EFEB',
-          200: '#99E5DE',
-          300: '#70DBD0',
-          400: '#63D8C0', // primaryHover
-          500: '#4CC9B0', // primary
-          600: '#3BB59D',
-          700: '#2E9480',
-          800: '#237363',
-          900: '#174F44',
-          950: '#0E2E28',
+          50: '#F0FDFA',
+          100: '#CCFBF1',
+          200: '#99F6E4',
+          300: '#5EEAD4',
+          400: '#2DD4BF',
+          500: '#14B8A6',
+          600: '#0F766E', // High-contrast primary button green (6.2:1 with white)
+          700: '#115E59', // Darker hover
+          800: '#134E4A',
+          900: '#042F2E',
+          950: '#021B1A',
+        },
+        emerald: {
+          50: '#F0FDFA',
+          100: '#CCFBF1',
+          200: '#99F6E4',
+          300: '#5EEAD4',
+          400: '#2DD4BF',
+          500: '#14B8A6',
+          600: '#0F766E', // exact same green as brand-600
+          700: '#115E59',
+          800: '#134E4A',
+          900: '#042F2E',
+          950: '#021B1A',
+        },
+        green: {
+          50: '#F0FDFA',
+          100: '#CCFBF1',
+          200: '#99F6E4',
+          300: '#5EEAD4',
+          400: '#2DD4BF',
+          500: '#14B8A6',
+          600: '#0F766E', // exact same green as brand-600
+          700: '#115E59',
+          800: '#134E4A',
+          900: '#042F2E',
+          950: '#021B1A',
+        },
+        teal: {
+          50: '#F0FDFA',
+          100: '#CCFBF1',
+          200: '#99F6E4',
+          300: '#5EEAD4',
+          400: '#2DD4BF',
+          500: '#14B8A6',
+          600: '#0F766E', // exact same green as brand-600
+          700: '#115E59',
+          800: '#134E4A',
+          900: '#042F2E',
+          950: '#021B1A',
         },
         // Slate mapping to match textPrimary / textSecondary / textMuted
         slate: {
@@ -71,12 +110,6 @@ export default {
           850: '#19232C', // card
           900: '#141B22', // surface
           950: '#0F141A', // background
-        },
-        // Status colors mapped to exact palette
-        emerald: {
-          400: '#8AE08A',
-          500: '#72D572', // success
-          600: '#5CBF5C',
         },
         amber: {
           400: '#ECC675',

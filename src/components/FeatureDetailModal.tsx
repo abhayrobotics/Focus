@@ -111,6 +111,19 @@ export const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 space-y-4">
+          {/* Step / Feature Title */}
+          <div className="space-y-1">
+            <label className="text-xs font-mono text-slate-400 font-bold uppercase">Title / Step Name *</label>
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Write the MVP scope: Login + Dashboard + Grievance Management"
+              className="w-full bg-dark-950 border border-dark-800 rounded-lg px-3.5 py-2 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-brand-500"
+            />
+          </div>
+
           {/* Status & Progress */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-dark-850 border border-dark-800">
             <div className="space-y-1">

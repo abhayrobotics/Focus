@@ -47,7 +47,7 @@ exportRouter.get('/dsa', async (req, res) => {
 
     const rows = [
       headers,
-      ...questions.map((q) => [
+      ...questions.map((q: any) => [
         q.number,
         q.topic,
         q.leetcodeNumber || '',
@@ -97,7 +97,7 @@ exportRouter.get('/sessions', async (req, res) => {
 
     const rows = [
       headers,
-      ...sessions.map((s) => [
+      ...sessions.map((s: any) => [
         s.date,
         s.category,
         s.durationMinutes,
@@ -145,7 +145,7 @@ exportRouter.get('/reviews', async (req, res) => {
 
     const rows = [
       headers,
-      ...reviews.map((r) => [
+      ...reviews.map((r: any) => [
         r.date,
         r.targetHours,
         r.actualHours,
@@ -202,8 +202,8 @@ exportRouter.get('/projects', async (req, res) => {
 
     const rows: (string | number | boolean | null | undefined)[][] = [headers];
 
-    for (const p of projects) {
-      for (const f of p.features) {
+    for (const p of projects as any[]) {
+      for (const f of (p.features || []) as any[]) {
         rows.push([
           p.name,
           p.isFlagship ? 'YES' : 'NO',
@@ -253,7 +253,7 @@ exportRouter.get('/interview', async (req, res) => {
 
     const rows = [
       headers,
-      ...topics.map((t) => [
+      ...topics.map((t: any) => [
         t.category,
         t.name,
         t.priority,
@@ -277,23 +277,108 @@ exportRouter.get('/interview', async (req, res) => {
   }
 });
 
+// 4.8 Export Job Applications & Interview Pipeline CSV (Excel-Compatible)
+exportRouter.get('/applications', async (req, res) => {
+  try {
+    const db = prisma as any;
+    const applications = await db.jobApplication.findMany({
+      include: {
+        rounds: {
+          orderBy: { roundNumber: 'asc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const headers = [
+      'Company_Name',
+      'Role',
+      'Location',
+      'Current_Status',
+      'Platform_Source',
+      'Applied_Date',
+      'Salary_Range',
+      'Total_Rounds_Count',
+      'Latest_Round_Name',
+      'Latest_Round_Status',
+      'Latest_Round_Scheduled',
+      'All_Questions_Asked',
+      'All_Feedback_Learnings',
+      'Contact_Person',
+      'Contact_Email',
+      'Resume_Version',
+      'Job_URL',
+      'Notes',
+    ];
+
+    const rows = [
+      headers,
+      ...applications.map((app: any) => {
+        const rounds = app.rounds || [];
+        const latestRound = rounds.length > 0 ? rounds[rounds.length - 1] : null;
+        const allQuestions = rounds
+          .filter((r: any) => r.questionsAsked)
+          .map((r: any) => `[R${r.roundNumber} - ${r.roundName}]: ${r.questionsAsked}`)
+          .join(' | ');
+        const allFeedback = rounds
+          .filter((r: any) => r.feedback)
+          .map((r: any) => `[R${r.roundNumber} - ${r.roundName}]: ${r.feedback}`)
+          .join(' | ');
+
+        return [
+          app.companyName,
+          app.role,
+          app.location || 'Remote',
+          app.status,
+          app.platform,
+          app.appliedDate,
+          app.salaryRange || '',
+          rounds.length,
+          latestRound ? latestRound.roundName : '',
+          latestRound ? latestRound.status : '',
+          latestRound && latestRound.scheduledAt ? format(new Date(latestRound.scheduledAt), 'yyyy-MM-dd HH:mm') : '',
+          allQuestions,
+          allFeedback,
+          app.contactPerson || '',
+          app.contactEmail || '',
+          app.resumeVersion || '',
+          app.jobUrl || '',
+          app.notes || '',
+        ];
+      }),
+    ];
+
+    const csvData = toCsvString(rows);
+    const filename = `CareerOS_Job_Applications_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csvData);
+  } catch (err: any) {
+    console.error('Error exporting applications CSV:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 5. Complete All-In-One Formatted Database Backup CSV
 exportRouter.get('/full-backup', async (req, res) => {
   try {
-    const [questions, sessions, reviews, projects, interviewTopics, parkedIdeas] = await Promise.all([
-      prisma.dSAQuestion.findMany({ orderBy: { number: 'asc' } }),
-      prisma.workSession.findMany({ orderBy: { date: 'desc' } }),
-      prisma.dailyReview.findMany({ orderBy: { date: 'desc' } }),
-      prisma.project.findMany({ include: { features: true } }),
-      prisma.interviewTopic.findMany({ orderBy: { category: 'asc' } }),
-      prisma.parkedIdea.findMany({ orderBy: { createdAt: 'desc' } }),
+    const db = prisma as any;
+    const [questions, sessions, reviews, projects, interviewTopics, parkedIdeas, applications] = await Promise.all([
+      db.dSAQuestion.findMany({ orderBy: { number: 'asc' } }),
+      db.workSession.findMany({ orderBy: { date: 'desc' } }),
+      db.dailyReview.findMany({ orderBy: { date: 'desc' } }),
+      db.project.findMany({ include: { features: true } }),
+      db.interviewTopic.findMany({ orderBy: { category: 'asc' } }),
+      db.parkedIdea.findMany({ orderBy: { createdAt: 'desc' } }),
+      db.jobApplication.findMany({ include: { rounds: { orderBy: { roundNumber: 'asc' } } }, orderBy: { createdAt: 'desc' } }),
     ]);
 
     const timestamp = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
     const sections: string[] = [];
 
     // Header Meta
-    sections.push(`=== CAREEROS DATABASE FULL BACKUP ===\r\nGenerated_At: ${timestamp}\r\nTotal_DSA_Questions: ${questions.length}\r\nTotal_Work_Sessions: ${sessions.length}\r\nTotal_Daily_Reviews: ${reviews.length}\r\n\r\n`);
+    sections.push(`=== CAREEROS DATABASE FULL BACKUP ===\r\nGenerated_At: ${timestamp}\r\nTotal_DSA_Questions: ${questions.length}\r\nTotal_Work_Sessions: ${sessions.length}\r\nTotal_Daily_Reviews: ${reviews.length}\r\nTotal_Job_Applications: ${applications.length}\r\n\r\n`);
 
     // Section 1: DSA
     sections.push('### SECTION 1: DSA CURRICULUM & NOTES ###');
@@ -316,7 +401,7 @@ exportRouter.get('/full-backup', async (req, res) => {
           'Needs_Revision',
           'Problem_URL',
         ],
-        ...questions.map((q) => [
+        ...questions.map((q: any) => [
           q.number,
           q.topic,
           q.leetcodeNumber || '',
@@ -341,7 +426,7 @@ exportRouter.get('/full-backup', async (req, res) => {
     sections.push(
       toCsvString([
         ['Date', 'Category', 'Duration_Minutes', 'Task_Title', 'Notes', 'Created_At'],
-        ...sessions.map((s) => [
+        ...sessions.map((s: any) => [
           s.date,
           s.category,
           s.durationMinutes,
@@ -368,7 +453,7 @@ exportRouter.get('/full-backup', async (req, res) => {
           'Mistake_Trap',
           'Tomorrow_Priority',
         ],
-        ...reviews.map((r) => [
+        ...reviews.map((r: any) => [
           r.date,
           r.targetHours,
           r.actualHours,
@@ -388,8 +473,8 @@ exportRouter.get('/full-backup', async (req, res) => {
     const projectRows: (string | number | boolean | null | undefined)[][] = [
       ['Project_Name', 'Category', 'Feature_Name', 'Status', 'Priority', 'Progress', 'Next_Action', 'Technical_Notes'],
     ];
-    for (const p of projects) {
-      for (const f of p.features) {
+    for (const p of projects as any[]) {
+      for (const f of (p.features || []) as any[]) {
         projectRows.push([
           p.name,
           f.category,
@@ -409,7 +494,7 @@ exportRouter.get('/full-backup', async (req, res) => {
     sections.push(
       toCsvString([
         ['Category', 'Topic_Name', 'Status', 'Confidence_1_to_5', 'Priority', 'Phase', 'Key_Questions', 'Practical_Tips'],
-        ...interviewTopics.map((t) => [
+        ...interviewTopics.map((t: any) => [
           t.category,
           t.name,
           t.status,
@@ -427,7 +512,7 @@ exportRouter.get('/full-backup', async (req, res) => {
     sections.push(
       toCsvString([
         ['Title', 'Category', 'Status', 'Notes', 'Created_At'],
-        ...parkedIdeas.map((pi) => [
+        ...parkedIdeas.map((pi: any) => [
           pi.title,
           pi.category,
           pi.status,
@@ -436,6 +521,39 @@ exportRouter.get('/full-backup', async (req, res) => {
         ]),
       ])
     );
+
+    // Section 7: Job & Interview Applications
+    sections.push('\r\n### SECTION 7: JOB & INTERVIEW APPLICATIONS PIPELINE ###');
+    const appRows: (string | number | boolean | null | undefined)[][] = [
+      ['Company_Name', 'Role', 'Location', 'Status', 'Platform', 'Applied_Date', 'Salary_Range', 'Rounds_Count', 'Latest_Round', 'Questions_Asked', 'Feedback_Learnings'],
+    ];
+    for (const app of applications as any[]) {
+      const rounds = app.rounds || [];
+      const latestRound = rounds.length > 0 ? rounds[rounds.length - 1] : null;
+      const allQuestions = rounds
+        .filter((r: any) => r.questionsAsked)
+        .map((r: any) => `[${r.roundName}]: ${r.questionsAsked}`)
+        .join(' | ');
+      const allFeedback = rounds
+        .filter((r: any) => r.feedback)
+        .map((r: any) => `[${r.roundName}]: ${r.feedback}`)
+        .join(' | ');
+
+      appRows.push([
+        app.companyName,
+        app.role,
+        app.location || 'Remote',
+        app.status,
+        app.platform,
+        app.appliedDate,
+        app.salaryRange || '',
+        rounds.length,
+        latestRound ? `${latestRound.roundName} (${latestRound.status})` : 'None',
+        allQuestions,
+        allFeedback,
+      ]);
+    }
+    sections.push(toCsvString(appRows));
 
     const fullCsv = sections.join('\r\n');
     const filename = `CareerOS_Full_Backup_${format(new Date(), 'yyyy-MM-dd')}.csv`;

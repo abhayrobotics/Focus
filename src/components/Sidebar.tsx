@@ -4,12 +4,15 @@ import {
   Code2,
   FolderGit2,
   Target,
+  Briefcase,
   Sparkles,
   Map,
   Flame,
   X,
+  Zap,
 } from 'lucide-react';
 import { NavTab, ConsistencyStats } from '../types';
+import { BrandLogo } from './BrandLogo';
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -35,8 +38,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'DSA', label: 'DSA Tracker', icon: <Code2 className="w-4 h-4" />, badge: '80 Q' },
     { id: 'PROJECTS', label: 'Projects', icon: <FolderGit2 className="w-4 h-4" /> },
     { id: 'INTERVIEW', label: 'Interview Prep', icon: <Target className="w-4 h-4" /> },
-    { id: 'GROWTH', label: 'Daily Growth', icon: <Sparkles className="w-4 h-4" /> },
-    { id: 'ROADMAP', label: 'Roadmap', icon: <Map className="w-4 h-4" />, badge: 'Phase 1' },
+    { id: 'APPLICATIONS', label: 'Job Applications', icon: <Briefcase className="w-4 h-4" /> },
+    { id: 'GROWTH', label: 'Consistency & Logs', icon: <Zap className="w-4 h-4" /> },
+    { id: 'ROADMAP', label: '2026 Strategy', icon: <Map className="w-4 h-4" /> },
   ];
 
   const handleSelectTab = (tab: NavTab) => {
@@ -63,8 +67,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div>
           <div className="p-5 border-b border-dark-800/80 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center font-bold text-sm text-white shadow-sm shadow-brand-500/20">
-                ⚡
+              <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shadow-sm shrink-0">
+                <BrandLogo variant="badge" className="w-8 h-8" />
               </div>
               <div>
                 <span className="font-bold tracking-tight text-sm text-slate-900 dark:text-white block">Focus</span>
@@ -104,8 +108,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={item.id}
                   onClick={() => handleSelectTab(item.id)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-all ${isActive
-                      ? 'bg-brand-600 text-white font-bold shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800/70'
+                    ? 'btn-primary !justify-between text-white font-bold shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800/70'
                     }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -114,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                   {item.badge && (
                     <span
-                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${isActive ? 'bg-brand-700 text-white font-bold' : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-dark-700'
+                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${isActive ? 'bg-black/20 text-white font-bold' : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-dark-700'
                         }`}
                     >
                       {item.badge}
@@ -155,10 +159,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="w-full bg-dark-800 rounded-full h-1.5 overflow-hidden">
                 <div
                   className={`h-full transition-all duration-300 ${consistency.todayStatus === 'TARGET_MET'
-                      ? 'bg-emerald-500'
-                      : consistency.todayStatus === 'STUDIED_PACE'
-                        ? 'bg-brand-500'
-                        : 'bg-slate-600'
+                    ? 'bg-emerald-500'
+                    : consistency.todayStatus === 'STUDIED_PACE'
+                      ? 'bg-brand-500'
+                      : 'bg-slate-600'
                     }`}
                   style={{ width: `${consistency.todayProgressPercent}%` }}
                 />

@@ -14,15 +14,15 @@
   --color-text-secondary: #334155;
   --color-text-muted: #64748B;
 
-  --color-primary: #0D9488;
-  --color-primary-hover: #0F766E;
+  --color-primary: #0F766E;
+  --color-primary-hover: #115E59;
   --color-secondary: #4F46E5;
 
-  --color-success: #15803D;
+  --color-success: #0F766E;
   --color-warning: #B45309;
   --color-danger: #B91C1C;
   --color-info: #0369A1;
-  --color-focus: #0D9488;
+  --color-focus: #0F766E;
 }
 
 html.dark {
@@ -37,15 +37,15 @@ html.dark {
   --color-text-secondary: #9BAAB5;
   --color-text-muted: #64727D;
 
-  --color-primary: #4CC9B0;
-  --color-primary-hover: #63D8C0;
+  --color-primary: #0F766E;
+  --color-primary-hover: #14B8A6;
   --color-secondary: #6FA8DC;
 
-  --color-success: #72D572;
-  --color-warning: #E5B85C;
-  --color-danger: #E57373;
-  --color-info: #6FA8DC;
-  --color-focus: #8B9CF6;
+  --color-success: #0F766E;
+  --color-warning: #D97706;
+  --color-danger: #DC2626;
+  --color-info: #0284C7;
+  --color-focus: #0F766E;
 }
 
 @layer base {
@@ -107,16 +107,27 @@ html.dark {
     border-radius: 0.5rem;
     font-size: 0.75rem;
     font-weight: 700;
-    background-color: var(--color-primary);
-    color: #FFFFFF;
+    background-color: #0F766E !important;
+    border: 1px solid #0F766E !important;
+    color: #FFFFFF !important;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
     transition: all 0.15s ease;
   }
   .btn-primary:hover {
-    background-color: var(--color-primary-hover);
+    background-color: #115E59 !important;
+    border-color: #115E59 !important;
+    color: #FFFFFF !important;
+  }
+  html.dark .btn-primary:hover {
+    background-color: #115E59 !important;
+    border-color: #115E59 !important;
+    color: #FFFFFF !important;
   }
   .btn-primary:active {
     transform: scale(0.98);
+  }
+  .btn-primary * {
+    color: #FFFFFF !important;
   }
 
   .btn-secondary {
@@ -171,15 +182,21 @@ html.dark {
     font-weight: 700;
   }
 
-  .badge-emerald {
-    background-color: #DCFCE7;
-    color: #15803D;
-    border: 1px solid #86EFAC;
+  .badge-emerald,
+  .badge-brand,
+  .badge-green,
+  .badge-teal {
+    background-color: #CCFBF1;
+    color: #0F766E;
+    border: 1px solid #99F6E4;
   }
-  html.dark .badge-emerald {
-    background-color: rgba(114, 213, 114, 0.12);
-    color: #72D572;
-    border: 1px solid rgba(114, 213, 114, 0.3);
+  html.dark .badge-emerald,
+  html.dark .badge-brand,
+  html.dark .badge-green,
+  html.dark .badge-teal {
+    background-color: rgba(15, 118, 110, 0.2);
+    color: #2DD4BF;
+    border: 1px solid rgba(45, 212, 191, 0.3);
   }
 
   .badge-indigo {
@@ -188,9 +205,9 @@ html.dark {
     border: 1px solid #A5B4FC;
   }
   html.dark .badge-indigo {
-    background-color: rgba(76, 201, 176, 0.12);
-    color: #4CC9B0;
-    border: 1px solid rgba(76, 201, 176, 0.3);
+    background-color: rgba(99, 102, 241, 0.15);
+    color: #A5B4FC;
+    border: 1px solid rgba(99, 102, 241, 0.3);
   }
 
   .badge-amber {
@@ -329,8 +346,25 @@ html:not(.dark) .text-brand-300 {
 }
 
 html:not(.dark) .bg-brand-600,
-html:not(.dark) .bg-brand-500 {
-  background-color: #0D9488 !important;
+html:not(.dark) .bg-brand-500,
+html:not(.dark) .bg-emerald-600,
+html:not(.dark) .bg-emerald-500,
+html:not(.dark) .bg-green-600,
+html:not(.dark) .bg-green-500,
+html:not(.dark) .bg-teal-600,
+html:not(.dark) .bg-teal-500 {
+  background-color: #0F766E !important;
+  color: #FFFFFF !important;
+}
+
+html:not(.dark) .bg-brand-600 *,
+html:not(.dark) .bg-brand-500 *,
+html:not(.dark) .bg-emerald-600 *,
+html:not(.dark) .bg-emerald-500 *,
+html:not(.dark) .bg-green-600 *,
+html:not(.dark) .bg-green-500 *,
+html:not(.dark) .bg-teal-600 *,
+html:not(.dark) .bg-teal-500 * {
   color: #FFFFFF !important;
 }
 
@@ -341,8 +375,20 @@ html:not(.dark) .text-indigo-300 {
 }
 
 html:not(.dark) .text-emerald-400,
-html:not(.dark) .text-emerald-300 {
-  color: #15803D !important; /* Dark Emerald */
+html:not(.dark) .text-emerald-300,
+html:not(.dark) .text-emerald-500,
+html:not(.dark) .text-emerald-600,
+html:not(.dark) .text-brand-400,
+html:not(.dark) .text-brand-300,
+html:not(.dark) .text-brand-500,
+html:not(.dark) .text-brand-600,
+html:not(.dark) .text-green-400,
+html:not(.dark) .text-green-500,
+html:not(.dark) .text-green-600,
+html:not(.dark) .text-teal-400,
+html:not(.dark) .text-teal-500,
+html:not(.dark) .text-teal-600 {
+  color: #0F766E !important; /* Unified Deep Teal Green */
   font-weight: 700;
 }
 
@@ -399,8 +445,8 @@ html:not(.dark) textarea::placeholder {
 html:not(.dark) input:focus,
 html:not(.dark) textarea:focus,
 html:not(.dark) select:focus {
-  border-color: #0D9488 !important;
-  box-shadow: 0 0 0 1px #0D9488 !important;
+  border-color: #0F766E !important;
+  box-shadow: 0 0 0 1px #0F766E !important;
 }
 
 /* Secondary Buttons in Light Mode */
@@ -418,12 +464,15 @@ html:not(.dark) .btn-secondary:hover {
 
 /* Primary Action Buttons */
 html:not(.dark) .btn-primary {
-  background-color: #0D9488 !important;
+  background-color: #0F766E !important;
+  border-color: #0F766E !important;
   color: #FFFFFF !important;
-  box-shadow: 0 1px 3px 0 rgba(13, 148, 136, 0.3) !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 118, 110, 0.3) !important;
 }
 html:not(.dark) .btn-primary:hover {
-  background-color: #0F766E !important;
+  background-color: #115E59 !important;
+  border-color: #115E59 !important;
+  color: #FFFFFF !important;
 }
 
 /* Sidebar & Sticky Header */
@@ -440,10 +489,10 @@ html:not(.dark) header {
 }
 
 /* Sidebar Navigation Items */
-html:not(.dark) aside nav button:not(.bg-brand-600) {
+html:not(.dark) aside nav button:not(.btn-primary):not(.bg-brand-600) {
   color: #334155 !important;
 }
-html:not(.dark) aside nav button:not(.bg-brand-600):hover {
+html:not(.dark) aside nav button:not(.btn-primary):not(.bg-brand-600):hover {
   background-color: #F1F5F9 !important;
   color: #0F172A !important;
 }
@@ -461,7 +510,7 @@ html:not(.dark) .panel-card {
   box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.06) !important;
 }
 html:not(.dark) .panel-card:hover {
-  border-color: #0D9488 !important;
+  border-color: #0F766E !important;
   background-color: #F8FAFC !important;
   box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -2px rgba(15, 23, 42, 0.06) !important;
 }

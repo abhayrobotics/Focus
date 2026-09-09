@@ -5,7 +5,13 @@ import {
   Clock,
   Code2,
   FolderGit2,
+  Briefcase,
   Zap,
+  ChevronDown,
+  ChevronUp,
+  Edit2,
+  Check,
+  X,
 } from 'lucide-react';
 import { DashboardData } from '../types';
 import { api } from '../services/api';
@@ -27,6 +33,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 }) => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandedActions, setExpandedActions] = useState<{ [id: string]: boolean }>({});
+  const [editingActionId, setEditingActionId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editSubtitle, setEditSubtitle] = useState('');
 
   useEffect(() => {
     loadDashboard();
@@ -42,6 +52,36 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleExpand = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setExpandedActions((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const startEditAction = (action: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingActionId(action.id);
+    setEditTitle(action.title);
+    setEditSubtitle(action.subtitle);
+    setExpandedActions((prev) => ({ ...prev, [action.id]: true }));
+  };
+
+  const saveEditAction = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!data) return;
+    setData({
+      ...data,
+      recommendations: data.recommendations.map((r) =>
+        r.id === id ? { ...r, title: editTitle, subtitle: editSubtitle } : r
+      ),
+    });
+    setEditingActionId(null);
+  };
+
+  const cancelEditAction = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingActionId(null);
   };
 
   if (loading || !data) {
@@ -141,61 +181,144 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {recommendations.map((action, idx) => (
-            <div
-              key={action.id}
-              className="panel-card flex flex-col justify-between space-y-4 relative overflow-hidden group hover:border-brand-500/60"
-            >
-              {idx === 0 && (
-                <div className="absolute top-0 right-0 bg-brand-600 text-white font-mono text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wider">
-                  Top Priority
-                </div>
-              )}
+          {recommendations.map((action, idx) => {
+            const isExpanded = expandedActions[action.id] || false;
+            const isEditing = editingActionId === action.id;
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`badge ${
-                      action.category === 'DSA'
-                        ? 'badge-indigo'
-                        : action.category === 'PROJECT'
-                        ? 'badge-emerald'
-                        : 'badge-amber'
-                    } text-[10px]`}
+            return (
+              <div
+                key={action.id}
+                className="panel-card flex flex-col justify-between space-y-3.5 relative overflow-hidden group hover:border-brand-500/60"
+              >
+                {idx === 0 && (
+                  <div className="absolute top-0 right-0 btn-primary !rounded-none !rounded-bl-lg font-mono text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider">
+                    Top Priority
+                  </div>
+                )}
+
+                <div className="space-y-2.5">
+                  {/* Top Badges & Actions */}
+                  <div className="flex items-center justify-between gap-2 pr-16">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={`badge ${
+                          action.category === 'DSA'
+                            ? 'badge-indigo'
+                            : action.category === 'PROJECT'
+                            ? 'badge-emerald'
+                            : 'badge-amber'
+                        } text-[10px]`}
+                      >
+                        {action.category}
+                      </span>
+                      <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        <span>{action.durationMinutes}m</span>
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => startEditAction(action, e)}
+                        className="p-1 text-slate-400 hover:text-white hover:bg-dark-800 rounded transition-colors"
+                        title="Edit title and description"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Title & Editable Section */}
+                  {isEditing ? (
+                    <div className="space-y-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-mono text-slate-400 uppercase font-bold">Title</label>
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="w-full bg-dark-950 border border-dark-750 rounded-lg p-2 text-xs text-white font-bold focus:outline-none focus:border-brand-500"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-mono text-slate-400 uppercase font-bold">Description</label>
+                        <textarea
+                          rows={2}
+                          value={editSubtitle}
+                          onChange={(e) => setEditSubtitle(e.target.value)}
+                          className="w-full bg-dark-950 border border-dark-750 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 leading-snug"
+                        />
+                      </div>
+                      <div className="flex items-center justify-end gap-1.5 pt-1">
+                        <button
+                          onClick={cancelEditAction}
+                          className="btn-secondary py-1 px-2.5 text-[11px]"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={(e) => saveEditAction(action.id, e)}
+                          className="btn-primary py-1 px-3 text-[11px]"
+                        >
+                          <Check className="w-3 h-3" />
+                          <span>Save</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <h3
+                        onClick={() => toggleExpand(action.id)}
+                        className="text-xs font-bold text-white group-hover:text-brand-400 transition-colors cursor-pointer leading-snug break-words"
+                      >
+                        {action.title}
+                      </h3>
+
+                      {/* Collapsible description (only shown when clicked/expanded) */}
+                      {isExpanded ? (
+                        <div className="mt-2 space-y-2 pt-2 border-t border-dark-800/80 animate-fade-in">
+                          <p className="text-xs text-slate-300 font-medium leading-relaxed break-words">
+                            {action.subtitle}
+                          </p>
+                          <p className="text-[11px] text-slate-400 leading-relaxed font-mono break-words">
+                            💡 {action.reason}
+                          </p>
+                        </div>
+                      ) : null}
+
+                      {/* Details Toggle Button */}
+                      <button
+                        onClick={() => toggleExpand(action.id)}
+                        className="mt-1.5 text-[11px] font-mono text-brand-400 hover:text-brand-300 flex items-center gap-1 font-semibold transition-colors"
+                      >
+                        {isExpanded ? (
+                          <>
+                            <span>Hide Details</span>
+                            <ChevronUp className="w-3 h-3" />
+                          </>
+                        ) : (
+                          <>
+                            <span>Show Details</span>
+                            <ChevronDown className="w-3 h-3" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={() => onOpenLogger(action.category, action.subtitle || action.title)}
+                    className="btn-primary w-full text-xs py-2 shadow-sm"
                   >
-                    {action.category}
-                  </span>
-                  <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-slate-400" />
-                    <span>{action.durationMinutes} min</span>
-                  </span>
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Start & Log ({action.durationMinutes}m)</span>
+                  </button>
                 </div>
-
-                <div>
-                  <h3 className="text-xs font-bold text-white group-hover:text-brand-400 transition-colors">
-                    {action.title}
-                  </h3>
-                  <p className="text-xs text-slate-300 font-medium mt-1 leading-snug">
-                    {action.subtitle}
-                  </p>
-                </div>
-
-                <p className="text-[11px] text-slate-400 leading-relaxed font-mono">
-                  {action.reason}
-                </p>
               </div>
-
-              <div className="pt-2 flex items-center gap-2">
-                <button
-                  onClick={() => onOpenLogger(action.category, action.subtitle)}
-                  className="btn-primary w-full text-xs py-2"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Start & Log ({action.durationMinutes}m)</span>
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -281,6 +404,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <div className="w-full bg-dark-950 rounded-full h-1.5 overflow-hidden">
                 <div className="bg-purple-500 h-full" style={{ width: `${projectSnapshot.progress}%` }} />
               </div>
+            </div>
+
+            {/* Job Applications Pill */}
+            <div
+              onClick={() => onNavigate('APPLICATIONS')}
+              className="p-3 rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 cursor-pointer transition-all flex items-center justify-between group"
+            >
+              <span className="text-xs font-mono font-bold text-blue-400 flex items-center gap-1.5">
+                <Briefcase className="w-3.5 h-3.5" /> JOB APPLICATIONS PIPELINE
+              </span>
+              <span className="text-[11px] font-mono text-slate-400 group-hover:text-white transition-colors">
+                View Stages &bull; Rounds &rarr;
+              </span>
             </div>
           </div>
         </div>

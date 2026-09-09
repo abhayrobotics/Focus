@@ -16,6 +16,10 @@ import {
   BarChart3,
   RefreshCw,
   Clock,
+  Edit2,
+  ChevronDown,
+  ChevronUp,
+  Info,
 } from 'lucide-react';
 import { Project, ProjectFeature } from '../types';
 import { api } from '../services/api';
@@ -92,6 +96,8 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({ onOpenLogger }) 
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [showProjectOverview, setShowProjectOverview] = useState(false);
+  const [expandedSteps, setExpandedSteps] = useState<{ [id: string]: boolean }>({});
 
   useEffect(() => {
     loadProjects();
@@ -147,6 +153,17 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({ onOpenLogger }) 
     }
   };
 
+  const toggleStepExpand = (stepId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedSteps((prev) => ({ ...prev, [stepId]: !prev[stepId] }));
+  };
+
+  const handleEditStep = (step: ProjectFeature, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedFeature(step);
+    setIsDetailOpen(true);
+  };
+
   const handleSyncGridOpsTracker = async () => {
     try {
       setIsSyncing(true);
@@ -196,34 +213,49 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({ onOpenLogger }) 
               <span className="text-[11px] font-mono text-slate-400">25-Step Architecture Engine</span>
             </div>
 
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight break-words">
-              UtilityOps — 25-Step MVP Completion Tracker
-            </h1>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight break-words">
+                UtilityOps — 25-Step MVP Completion Tracker
+              </h1>
+              <button
+                onClick={() => setShowProjectOverview(!showProjectOverview)}
+                className="btn-secondary py-1 px-2.5 text-[11px] flex items-center gap-1.5"
+                title="Toggle full project overview"
+              >
+                <Info className="w-3.5 h-3.5 text-brand-400" />
+                <span>{showProjectOverview ? 'Hide Overview' : 'Project Scope'}</span>
+                {showProjectOverview ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            </div>
 
-            {/* Fully responsive project description & architecture flow */}
-            <div className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl space-y-2 break-words">
-              <p className="break-words">
-                {flagship.description ||
-                  'Modular Monolith architecture for real-time grievance tracking, supervisor escalations, and automated SLA accountability.'}
-              </p>
-              <div className="flex items-center gap-1.5 flex-wrap text-xs font-mono pt-0.5">
-                <span className="text-slate-400 font-semibold shrink-0">Stack:</span>
-                <span className="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 font-semibold border border-indigo-500/30">
-                  React + TypeScript
-                </span>
-                <span className="text-slate-500">→</span>
-                <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30">
-                  Node.js Express
-                </span>
-                <span className="text-slate-500">→</span>
-                <span className="px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-semibold border border-cyan-500/30">
-                  Prisma ORM
-                </span>
-                <span className="text-slate-500">→</span>
-                <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 font-semibold border border-purple-500/30">
-                  SQLite / PostgreSQL
-                </span>
+            {/* Collapsible project description (only shown when requested) */}
+            {showProjectOverview && (
+              <div className="p-3 rounded-xl bg-dark-950/80 border border-dark-800 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl space-y-2 break-words animate-fade-in">
+                <p className="break-words">
+                  {flagship.description ||
+                    'Modular Monolith architecture for real-time grievance tracking, supervisor escalations, and automated SLA accountability.'}
+                </p>
               </div>
+            )}
+
+            {/* Tech Stack Pills */}
+            <div className="flex items-center gap-1.5 flex-wrap text-xs font-mono pt-0.5">
+              <span className="text-slate-400 font-semibold shrink-0">Stack:</span>
+              <span className="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 font-semibold border border-indigo-500/30">
+                React + TypeScript
+              </span>
+              <span className="text-slate-500">→</span>
+              <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30">
+                Node.js Express
+              </span>
+              <span className="text-slate-500">→</span>
+              <span className="px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-semibold border border-cyan-500/30">
+                Prisma ORM
+              </span>
+              <span className="text-slate-500">→</span>
+              <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 font-semibold border border-purple-500/30">
+                SQLite / PostgreSQL
+              </span>
             </div>
           </div>
 
@@ -350,11 +382,10 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({ onOpenLogger }) 
       <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl bg-dark-900 border border-dark-800 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setSelectedCategory('ALL')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all shrink-0 whitespace-nowrap ${
-            selectedCategory === 'ALL'
-              ? 'bg-brand-600 text-white shadow-sm'
+          className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all shrink-0 whitespace-nowrap ${selectedCategory === 'ALL'
+              ? 'btn-primary shadow-sm'
               : 'text-slate-400 hover:text-slate-200 hover:bg-dark-800'
-          }`}
+            }`}
         >
           All 25 Steps ({allMvpFeatures.length})
         </button>
@@ -365,14 +396,13 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({ onOpenLogger }) 
             <button
               key={p.id}
               onClick={() => setSelectedCategory(p.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
-                selectedCategory === p.id
-                  ? 'bg-brand-600 text-white shadow-sm'
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${selectedCategory === p.id
+                  ? 'btn-primary shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-dark-800'
-              }`}
+                }`}
             >
               <span>{p.title.split('—')[0].trim()}</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-dark-950/60 font-mono text-slate-300">
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-black/20 font-mono text-white">
                 {phaseDone}/{phaseFeatures.length || 0}
               </span>
             </button>
@@ -380,11 +410,10 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({ onOpenLogger }) 
         })}
         <button
           onClick={() => setSelectedCategory('FUTURE')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all shrink-0 whitespace-nowrap ${
-            selectedCategory === 'FUTURE'
-              ? 'bg-brand-600 text-white shadow-sm'
+          className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all shrink-0 whitespace-nowrap ${selectedCategory === 'FUTURE'
+              ? 'btn-primary shadow-sm'
               : 'text-slate-400 hover:text-slate-200 hover:bg-dark-800'
-          }`}
+            }`}
         >
           Post-MVP ({futureFeatures.length})
         </button>
@@ -427,13 +456,12 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({ onOpenLogger }) 
 
                   <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
                     <span
-                      className={`badge text-xs font-mono font-bold ${
-                        isPhaseComplete
+                      className={`badge text-xs font-mono font-bold ${isPhaseComplete
                           ? 'badge-emerald'
                           : phaseDoneCount > 0
-                          ? 'badge-amber'
-                          : 'badge-slate'
-                      }`}
+                            ? 'badge-amber'
+                            : 'badge-slate'
+                        }`}
                     >
                       {isPhaseComplete
                         ? 'PHASE COMPLETE'
@@ -454,6 +482,8 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({ onOpenLogger }) 
                 <div className="space-y-2.5">
                   {phaseFeatures.map((step) => {
                     const isDone = step.status === 'COMPLETE';
+                    const isExpanded = expandedSteps[step.id] || false;
+
                     return (
                       <div
                         key={step.id}
@@ -461,82 +491,115 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({ onOpenLogger }) 
                           setSelectedFeature(step);
                           setIsDetailOpen(true);
                         }}
-                        className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group ${
-                          isDone
+                        className={`p-3 sm:p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2.5 group ${isDone
                             ? 'bg-dark-900/40 border-dark-800/60 hover:border-emerald-500/40'
                             : 'bg-dark-900/90 border-dark-750 hover:border-brand-500/60 hover:bg-dark-850'
-                        }`}
+                          }`}
                       >
-                        {/* Checkbox & Task Details */}
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <button
-                            onClick={(e) => handleToggleFeature(step, e)}
-                            className="mt-0.5 shrink-0 text-slate-400 hover:text-emerald-400 transition-colors p-0.5 rounded focus:outline-none"
-                            title={isDone ? 'Mark as Planned' : 'Mark as Complete (+4% growth)'}
-                          >
-                            {isDone ? (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-400 fill-emerald-400/20" />
-                            ) : (
-                              <Circle className="w-5 h-5 text-slate-500 hover:text-brand-400" />
-                            )}
-                          </button>
+                        {/* Main Summary Row */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                          {/* Checkbox & Step Name */}
+                          <div className="flex items-start sm:items-center gap-2.5 flex-1 min-w-0">
+                            <button
+                              onClick={(e) => handleToggleFeature(step, e)}
+                              className="mt-0.5 sm:mt-0 shrink-0 text-slate-400 hover:text-emerald-400 transition-colors p-0.5 rounded focus:outline-none"
+                              title={isDone ? 'Mark as Planned' : 'Mark as Complete (+4% growth)'}
+                            >
+                              {isDone ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-400 fill-emerald-400/20" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-slate-500 hover:text-brand-400" />
+                              )}
+                            </button>
 
-                          <div className="space-y-1.5 min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-2 flex-wrap min-w-0">
                               <h3
-                                className={`text-xs sm:text-sm font-bold leading-snug transition-colors break-words ${
-                                  isDone
+                                className={`text-xs sm:text-sm font-bold leading-snug transition-colors break-words ${isDone
                                     ? 'text-slate-400 line-through'
                                     : 'text-white group-hover:text-brand-400'
-                                }`}
+                                  }`}
                               >
                                 {step.name}
                               </h3>
                               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-dark-950 text-emerald-400 font-semibold border border-emerald-500/20 shrink-0">
-                                +4% Growth
+                                +4%
                               </span>
                             </div>
+                          </div>
 
-                            {/* Responsive step description (no harsh line-clamp truncation) */}
+                          {/* Quick Toolbar */}
+                          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                            {/* Expand / Collapse Details Toggle */}
+                            {(step.description || step.nextAction) && (
+                              <button
+                                onClick={(e) => toggleStepExpand(step.id, e)}
+                                className="text-[11px] font-mono text-slate-400 hover:text-brand-400 px-2 py-1 rounded bg-dark-950/60 border border-dark-800/80 flex items-center gap-1 transition-colors"
+                                title="Toggle step description"
+                              >
+                                <span>{isExpanded ? 'Hide' : 'Details'}</span>
+                                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                              </button>
+                            )}
+
+                            {/* Direct Edit Button */}
+                            <button
+                              onClick={(e) => handleEditStep(step, e)}
+                              className="p-1 rounded text-slate-400 hover:text-white hover:bg-dark-800 border border-dark-800 transition-colors"
+                              title="Edit step title and description"
+                            >
+                              <Edit2 className="w-3.5 h-3.5 text-brand-400" />
+                            </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenLogger('PROJECT', `Project: ${step.name}`);
+                              }}
+                              className="btn-secondary py-1 px-2.5 text-[11px] flex items-center gap-1"
+                              title="Log work session on this step"
+                            >
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              <span className="hidden sm:inline">Log</span>
+                            </button>
+
+                            <span
+                              className={`badge text-[10px] font-mono ${isDone
+                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold'
+                                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                                }`}
+                            >
+                              {isDone ? 'DONE' : 'PLANNED'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Collapsible Details (Only shown when expanded) */}
+                        {isExpanded && (
+                          <div className="pt-2 mt-1 border-t border-dark-800/80 space-y-2 text-xs animate-fade-in" onClick={(e) => e.stopPropagation()}>
                             {step.description && (
-                              <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed break-words">
+                              <p className="text-slate-300 leading-relaxed break-words">
                                 {step.description}
                               </p>
                             )}
 
                             {step.nextAction && !isDone && (
-                              <div className="text-[11px] font-mono text-brand-300 flex flex-wrap items-baseline gap-1 mt-1 break-words">
-                                <span className="font-bold text-slate-400 shrink-0">Action:</span>
+                              <div className="p-2 rounded-lg bg-dark-950/70 border border-brand-500/30 text-[11px] font-mono text-brand-300 flex flex-wrap items-baseline gap-1 break-words">
+                                <span className="font-bold text-slate-400 shrink-0">🎯 Concrete Action:</span>
                                 <span className="break-words">{step.nextAction}</span>
                               </div>
                             )}
+
+                            <div className="flex justify-end pt-1">
+                              <button
+                                onClick={(e) => handleEditStep(step, e)}
+                                className="text-[11px] font-mono text-brand-400 hover:text-brand-300 flex items-center gap-1 font-semibold"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                                <span>Edit Title, Description & Notes</span>
+                              </button>
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Actions & Status Pill */}
-                        <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-dark-800/60">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenLogger('PROJECT', `Project: ${step.name}`);
-                            }}
-                            className="btn-secondary py-1 px-2.5 text-[11px] flex items-center gap-1"
-                            title="Log work session on this step"
-                          >
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            <span>Log Time</span>
-                          </button>
-
-                          <span
-                            className={`badge text-[10px] font-mono ${
-                              isDone
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold'
-                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                            }`}
-                          >
-                            {isDone ? 'DONE' : 'PLANNED'}
-                          </span>
-                        </div>
+                        )}
                       </div>
                     );
                   })}

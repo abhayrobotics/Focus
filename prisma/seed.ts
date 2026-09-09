@@ -204,37 +204,26 @@ async function main() {
 
   console.log(`✅ Seeded flagship project: ${project.name} with ${gridOpsMvpSteps.length} items (25 MVP Steps + Post-MVP modules).`);
 
-  // 5. Seed Full Stack Interview Preparation Topics
-  const interviewTopicsData = [
-    // Frontend
-    { category: 'FRONTEND', name: 'JavaScript (Event Loop, Closures, Prototypes, Async)', status: 'PRACTICED', confidence: 4, priority: 'CRITICAL', phase: 'PHASE_1', notes: 'Event loop phases (microtask Promise vs macrotask timers). Lexical scope closures and memory leak prevention.', keyQuestions: '1. What is the output of Promise.resolve().then(() => console.log(1)); setTimeout(() => console.log(2), 0)?\n2. How does JS prototype inheritance work under the hood?\n3. Explain debounce vs throttle with implementation.', practicalTips: 'Always remember Array.sort((a,b)=>a-b) numeric sort rule!' },
-    { category: 'FRONTEND', name: 'TypeScript (Generics, Type Narrowing, Utility Types)', status: 'LEARNING', confidence: 3, priority: 'HIGH', phase: 'PHASE_1', notes: 'Master keyof, typeof, Record, Partial, Omit, and discriminated unions.', keyQuestions: '1. Difference between type and interface in TS?\n2. How do you implement a strictly typed API response wrapper with Generics?', practicalTips: 'Use discriminated unions for state management.' },
-    { category: 'FRONTEND', name: 'React (Hooks, Fiber, State Colocation, Optimization)', status: 'PRACTICED', confidence: 4, priority: 'CRITICAL', phase: 'PHASE_1', notes: 'React 18 automatic batching, Fiber reconciliation tree, state colocation to prevent unnecessary re-renders before useMemo.', keyQuestions: '1. How does React determine when to re-render a component?\n2. When should you NOT use useMemo/useCallback?\n3. How do you build a custom hook for window resize/debounce?', practicalTips: 'Colocate state to eliminate 90% of re-renders!' },
-    { category: 'FRONTEND', name: 'Redux Toolkit & Global State Management', status: 'LEARNING', confidence: 3, priority: 'MEDIUM', phase: 'PHASE_1', notes: 'createSlice, createAsyncThunk, Immer immutability under the hood.', keyQuestions: '1. How does RTK simplify traditional Redux boilerplate?\n2. Context API vs Redux: when to choose which?', practicalTips: 'Keep server cache in React Query / RTK Query, UI state local.' },
-    { category: 'FRONTEND', name: 'Tailwind CSS & Responsive Layout Architecture', status: 'INTERVIEW_READY', confidence: 5, priority: 'MEDIUM', phase: 'PHASE_1', notes: 'Utility-first CSS, mobile-first breakpoints, dark mode class strategy.', keyQuestions: '1. How does Tailwind JIT compiler work?\n2. Best practices for avoiding bloated JSX class strings (clsx / tailwind-merge).', practicalTips: 'Use cn() utility for conditional classes.' },
-
-    // Backend
-    { category: 'BACKEND', name: 'Node.js (Streams, Clusters, Event Emitters, Concurrency)', status: 'LEARNING', confidence: 3, priority: 'CRITICAL', phase: 'PHASE_1', notes: 'Single-threaded event loop with libuv thread pool for async I/O. Buffer and Stream piping.', keyQuestions: '1. How does Node.js handle thousands of concurrent connections on a single thread?\n2. What causes event loop starvation and how do you prevent it?\n3. Difference between process.nextTick and setImmediate?', practicalTips: 'Never run heavy CPU sync loops in request handlers.' },
-    { category: 'BACKEND', name: 'Express.js (Middleware Pipeline, Error Boundaries)', status: 'PRACTICED', confidence: 4, priority: 'HIGH', phase: 'PHASE_1', notes: 'Middleware chaining (req, res, next), global centralized error middleware.', keyQuestions: '1. How does Express middleware chaining work internally?\n2. How do you structure async route handlers to avoid unhandled promise rejections?', practicalTips: 'Always provide next(err) or use express-async-errors.' },
-    { category: 'BACKEND', name: 'PostgreSQL & Relational Database Design', status: 'LEARNING', confidence: 3, priority: 'CRITICAL', phase: 'PHASE_1', notes: 'B-Tree indexing, composite indexes, foreign key cascades, ACID transaction isolation levels.', keyQuestions: '1. Explain Index Scan vs Sequential Scan in EXPLAIN ANALYZE.\n2. How do you prevent SQL injection and connection pool exhaustion?\n3. Normalization (1NF, 2NF, 3NF) with real-world schema design.', practicalTips: 'Always index foreign keys and query search columns!' },
-    { category: 'BACKEND', name: 'Prisma ORM & Transaction Boundaries', status: 'PRACTICED', confidence: 4, priority: 'HIGH', phase: 'PHASE_1', notes: 'Schema modeling, relational relations, interactive transactions ($transaction), and generated type-safety.', keyQuestions: '1. How does Prisma prevent N+1 query problems?\n2. How do you perform atomic multi-record updates in Prisma?', practicalTips: 'Use prisma.$transaction([ ... ]) for atomic consistency.' },
-    { category: 'BACKEND', name: 'Authentication, JWT Refresh-Token Rotation & RBAC', status: 'LEARNING', confidence: 3, priority: 'CRITICAL', phase: 'PHASE_1', notes: 'Access tokens in memory, refresh tokens in HTTP-only cookies, token family revocation upon token replay attacks.', keyQuestions: '1. How do you implement secure refresh-token rotation with replay detection?\n2. Where should JWTs be stored in client applications and why?\n3. How to design Role-Based Access Control (RBAC) middleware?', practicalTips: 'Token family replay detection invalidates all tokens immediately.' },
-
-    // Phase 2 (Next Month - CS Fundamentals)
-    { category: 'CS_FUNDAMENTALS', name: 'Operating Systems (Processes, Threads, Concurrency, Virtual Memory)', status: 'NOT_STARTED', confidence: 2, priority: 'HIGH', phase: 'PHASE_2', notes: 'Scheduled for Phase 2 (Next Month). Focus on processes vs threads, mutex/semaphores, virtual memory paging, and deadlock conditions.', keyQuestions: '1. Process vs Thread memory layout.\n2. What is a Deadlock and what are the 4 Coffman conditions?', practicalTips: 'Phase 2 priority (next month).' },
-    { category: 'CS_FUNDAMENTALS', name: 'Computer Networks (TCP/IP, HTTP 1.1/2/3, DNS, SSL/TLS Handshake)', status: 'NOT_STARTED', confidence: 2, priority: 'HIGH', phase: 'PHASE_2', notes: 'Scheduled for Phase 2 (Next Month). 3-way TCP handshake, TLS 1.3 handshake, HTTP/2 multiplexing, DNS resolution chain.', keyQuestions: '1. What happens when you type google.com in your browser?\n2. TCP vs UDP difference and trade-offs.\n3. How does HTTPS symmetric vs asymmetric encryption work?', practicalTips: 'Phase 2 priority (next month).' },
-  ];
-
-  for (const t of interviewTopicsData) {
+  // 5. Seed Full Stack Interview Preparation Topics (170 Curated Topics across 10 Categories)
+  const { INTERVIEW_TOPICS_CATALOG } = await import('../server/seedInterviewData.js');
+  for (const t of INTERVIEW_TOPICS_CATALOG) {
     await prisma.interviewTopic.create({
       data: {
         userId: user.id,
-        ...t,
+        category: t.category,
+        name: t.name,
+        status: t.status,
+        confidence: t.confidence,
+        priority: t.priority,
+        phase: t.phase,
+        notes: t.notes || '',
+        keyQuestions: t.keyQuestions || '',
+        practicalTips: t.practicalTips || '',
       },
     });
   }
 
-  console.log(`✅ Seeded ${interviewTopicsData.length} Interview Topics.`);
+  console.log(`✅ Seeded all ${INTERVIEW_TOPICS_CATALOG.length} Interview Topics across 10 categories.`);
 
   // 6. Seed Parked Ideas (Parking Lot Garage)
   const parkedIdeasData = [

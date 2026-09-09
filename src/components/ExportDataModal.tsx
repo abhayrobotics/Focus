@@ -9,7 +9,7 @@ import {
   FolderGit2,
   CheckCircle2,
   ShieldCheck,
-  ExternalLink,
+  Briefcase,
 } from 'lucide-react';
 
 interface ExportDataModalProps {
@@ -23,7 +23,10 @@ export const ExportDataModal: React.FC<ExportDataModalProps> = ({ isOpen, onClos
 
   if (!isOpen) return null;
 
-  const handleDownload = (type: 'full-backup' | 'dsa' | 'sessions' | 'reviews' | 'projects' | 'interview', label: string) => {
+  const handleDownload = (
+    type: 'full-backup' | 'dsa' | 'sessions' | 'reviews' | 'projects' | 'interview' | 'applications',
+    label: string
+  ) => {
     try {
       setDownloadingType(type);
       setDownloadSuccess(null);
@@ -90,7 +93,7 @@ export const ExportDataModal: React.FC<ExportDataModalProps> = ({ isOpen, onClos
                 <span className="text-xs font-bold text-white">Complete CareerOS Full Backup</span>
               </div>
               <p className="text-xs text-slate-300">
-                Exports all 6 modules: DSA Questions & Solutions, Session Logs, Reflections, Projects, Interview Prep, and Parked Ideas.
+                Exports all 7 modules: DSA Questions, Session Logs, Reflections, Projects, Interview Prep, Job Applications Pipeline & Rounds, and Parked Ideas.
               </p>
             </div>
 
@@ -112,6 +115,28 @@ export const ExportDataModal: React.FC<ExportDataModalProps> = ({ isOpen, onClos
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Job Applications & Interview Rounds */}
+            <div className="p-4 rounded-xl bg-dark-850 border border-dark-800 hover:border-blue-500/40 transition-colors flex flex-col justify-between gap-3 font-mono">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-blue-400" />
+                  <h4 className="text-xs font-bold text-white">Job Applications Pipeline</h4>
+                </div>
+                <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+                  Companies applied, stages, interview round questions, feedback notes, salary, and platform sources.
+                </p>
+              </div>
+
+              <button
+                onClick={() => handleDownload('applications', 'Job Applications CSV')}
+                disabled={downloadingType === 'applications'}
+                className="btn-secondary py-1.5 px-3 text-xs w-full justify-center text-blue-300 hover:border-blue-500/50"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Applications CSV</span>
+              </button>
+            </div>
+
             {/* DSA Notes */}
             <div className="p-4 rounded-xl bg-dark-850 border border-dark-800 hover:border-indigo-500/40 transition-colors flex flex-col justify-between gap-3 font-mono">
               <div className="space-y-1.5">
@@ -238,3 +263,4 @@ export const ExportDataModal: React.FC<ExportDataModalProps> = ({ isOpen, onClos
     </div>
   );
 };
+

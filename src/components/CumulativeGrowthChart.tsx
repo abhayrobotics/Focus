@@ -342,7 +342,7 @@ export const CumulativeGrowthChart: React.FC<CumulativeGrowthChartProps> = ({
             onClick={() => setIsSimulationMode(false)}
             className={`px-3 py-1 rounded-lg transition-all ${
               !isSimulationMode
-                ? 'bg-brand-600 text-white font-bold shadow-sm'
+                ? 'btn-primary font-bold shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >

@@ -1,4 +1,4 @@
-export type NavTab = 'DASHBOARD' | 'DSA' | 'PROJECTS' | 'INTERVIEW' | 'GROWTH' | 'ROADMAP';
+export type NavTab = 'DASHBOARD' | 'DSA' | 'PROJECTS' | 'INTERVIEW' | 'APPLICATIONS' | 'GROWTH' | 'ROADMAP';
 
 export interface ConsistencyStats {
   todayTargetHours: number;
@@ -143,12 +143,26 @@ export interface Project {
 
 export interface InterviewTopic {
   id: string;
-  category: 'FRONTEND' | 'BACKEND' | 'CODING' | 'CS_FUNDAMENTALS';
+  category:
+    | 'JAVASCRIPT'
+    | 'TYPESCRIPT'
+    | 'REACT'
+    | 'NODEJS'
+    | 'EXPRESS'
+    | 'POSTGRESQL'
+    | 'PRISMA'
+    | 'MONGODB'
+    | 'AUTH_SECURITY'
+    | 'CS_FUNDAMENTALS'
+    | 'FRONTEND'
+    | 'BACKEND'
+    | 'CODING'
+    | string;
   name: string;
-  status: 'NOT_STARTED' | 'LEARNING' | 'PRACTICED' | 'INTERVIEW_READY';
+  status: 'NOT_STARTED' | 'LEARNING' | 'PRACTICED' | 'INTERVIEW_READY' | string;
   confidence: number; // 1 to 5
-  priority: string;
-  phase: string;
+  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | string;
+  phase: 'PHASE_1' | 'PHASE_2' | string;
   lastStudied?: string;
   nextReview?: string;
   notes?: string;
@@ -242,5 +256,63 @@ export interface CumulativeGrowthData {
   totalPenalties: number;
   totalRecovered: number;
   days: CumulativeGrowthDay[];
+}
+
+export type ApplicationStatus =
+  | 'APPLIED'
+  | 'SHORTLISTED'
+  | 'OA_ROUND'
+  | 'TECH_ROUND_1'
+  | 'TECH_ROUND_2'
+  | 'MANAGERIAL_HR'
+  | 'OFFER'
+  | 'REJECTED'
+  | 'GHOSTED';
+
+export type RoundStatus = 'SCHEDULED' | 'CLEARED' | 'FAILED' | 'SKIPPED' | 'PENDING_FEEDBACK';
+
+export interface InterviewRound {
+  id: string;
+  applicationId: string;
+  roundNumber: number;
+  roundName: string;
+  status: RoundStatus;
+  scheduledAt?: string;
+  interviewerName?: string;
+  questionsAsked?: string;
+  feedback?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface JobApplication {
+  id: string;
+  userId?: string;
+  companyName: string;
+  role: string;
+  location?: string;
+  salaryRange?: string;
+  platform: 'LINKEDIN' | 'NAUKRI' | 'INSTAHYRE' | 'REFERRAL' | 'DIRECT' | 'WELLFOUND' | 'OTHER' | string;
+  jobUrl?: string;
+  resumeVersion?: string;
+  appliedDate: string; // YYYY-MM-DD
+  status: ApplicationStatus;
+  contactPerson?: string;
+  contactEmail?: string;
+  notes?: string;
+  rounds: InterviewRound[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ApplicationStats {
+  totalApplied: number;
+  shortlistedCount: number;
+  interviewingCount: number;
+  offerCount: number;
+  rejectedCount: number;
+  ghostedCount: number;
+  callRatePercent: number;
 }
 
