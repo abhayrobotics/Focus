@@ -72,7 +72,9 @@ export interface DSAQuestion {
   id: string;
   number: number;
   leetcodeNumber?: number;
+  phase?: string;
   topic: string;
+  subPattern?: string;
   title: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   problemUrl?: string;

@@ -5,6 +5,9 @@ import {
   Upload,
   Play,
   Download,
+  Layers,
+  Sparkles,
+  BookOpen,
 } from 'lucide-react';
 import { DSAQuestion, DSAOverview, DSATopicStat } from '../types';
 import { api } from '../services/api';
@@ -23,6 +26,7 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
   const [loading, setLoading] = useState(false);
 
   // Filters
+  const [selectedPhase, setSelectedPhase] = useState<'ALL' | 'Phase 1A' | 'Phase 1B'>('ALL');
   const [selectedTopic, setSelectedTopic] = useState<string>('ALL');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
@@ -40,7 +44,6 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
 
   const loadDsaQuestions = async () => {
     try {
-      setLoading(true);
       const res = await api.getDsaQuestions({
         topic: selectedTopic !== 'ALL' ? selectedTopic : undefined,
         difficulty: selectedDifficulty !== 'ALL' ? selectedDifficulty : undefined,
@@ -88,6 +91,17 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
         return 'bg-dark-800 text-slate-400 border border-dark-700';
     }
   };
+
+  // Filter questions by selectedPhase on client side
+  const displayedQuestions = questions.filter((q) => {
+    if (selectedPhase !== 'ALL' && q.phase && q.phase !== selectedPhase) {
+      return false;
+    }
+    return true;
+  });
+
+  const phase1ACount = questions.filter((q) => q.phase === 'Phase 1A').length;
+  const phase1BCount = questions.filter((q) => q.phase === 'Phase 1B').length;
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5 sm:space-y-6">
@@ -169,9 +183,46 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
           <div className="p-3 rounded-xl bg-dark-850 border border-dark-800 space-y-0.5 col-span-2 sm:col-span-1">
             <span className="text-[11px] font-mono text-slate-400">Current Topic</span>
             <div className="text-xs font-bold text-brand-400 truncate">
-              {overview?.currentTopic || 'Array'}
+              {overview?.currentTopic || 'Arrays'}
             </div>
           </div>
+        </div>
+
+        {/* Phase Breakdown Tabs */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-dark-800">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold block mr-1">
+            Curriculum Phase:
+          </span>
+          <button
+            onClick={() => setSelectedPhase('ALL')}
+            className={`px-3 py-1 rounded-lg text-xs font-mono transition-all border ${
+              selectedPhase === 'ALL'
+                ? 'btn-primary font-bold shadow-sm'
+                : 'bg-dark-850 text-slate-300 border-dark-800 hover:border-dark-700'
+            }`}
+          >
+            All Questions ({questions.length})
+          </button>
+          <button
+            onClick={() => setSelectedPhase('Phase 1A')}
+            className={`px-3 py-1 rounded-lg text-xs font-mono transition-all border ${
+              selectedPhase === 'Phase 1A'
+                ? 'btn-primary font-bold shadow-sm'
+                : 'bg-dark-850 text-slate-300 border-dark-800 hover:border-dark-700'
+            }`}
+          >
+            Phase 1A — Foundation ({phase1ACount || 50})
+          </button>
+          <button
+            onClick={() => setSelectedPhase('Phase 1B')}
+            className={`px-3 py-1 rounded-lg text-xs font-mono transition-all border ${
+              selectedPhase === 'Phase 1B'
+                ? 'btn-primary font-bold shadow-sm'
+                : 'bg-dark-850 text-slate-300 border-dark-800 hover:border-dark-700'
+            }`}
+          >
+            Phase 1B — Mastery ({phase1BCount || 30})
+          </button>
         </div>
 
         {/* 9-Topic Sequence Pills */}
@@ -209,7 +260,7 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by title, topic, LC # (e.g. 1480, 53, 1), or mistakes..."
+            placeholder="Search by title, pattern (e.g. Kadane, Prefix Sum), LC # (e.g. 1480, 53)..."
             className="w-full bg-dark-950 border border-dark-800 rounded-lg pl-9 pr-3.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
           />
         </div>
@@ -259,12 +310,12 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
           <div className="panel p-8 text-center text-slate-500 font-mono text-xs">
             Loading questions...
           </div>
-        ) : questions.length === 0 ? (
+        ) : displayedQuestions.length === 0 ? (
           <div className="panel p-8 text-center text-slate-500 font-mono text-xs">
             No questions found matching your filter criteria.
           </div>
         ) : (
-          questions.map((q) => {
+          displayedQuestions.map((q) => {
             const fallbackSearchUrl = `https://leetcode.com/problemset/all/?search=${q.leetcodeNumber || encodeURIComponent(q.title)}`;
             const directUrl = q.problemUrl || fallbackSearchUrl;
 
@@ -283,6 +334,11 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
                       LC #{q.leetcodeNumber || q.number}
                     </span>
+                    {q.phase && (
+                      <span className="badge badge-purple text-[10px]">
+                        {q.phase}
+                      </span>
+                    )}
                     <span className={`badge ${getDifficultyBadge(q.difficulty)} text-[10px]`}>
                       {q.difficulty}
                     </span>
@@ -293,7 +349,7 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
                   </span>
                 </div>
 
-                {/* Question Title & Revision Badge */}
+                {/* Question Title & Sub-Pattern */}
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="text-sm font-bold text-white group-hover:text-brand-400 transition-colors leading-snug break-words flex-1">
@@ -303,6 +359,19 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
                       <span className="badge badge-rose text-[9px] shrink-0">Revision</span>
                     )}
                   </div>
+
+                  {q.subPattern && (
+                    <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
+                      <span className="text-indigo-400 font-semibold">🎯 Pattern:</span>
+                      <span className="text-slate-300">{q.subPattern}</span>
+                    </div>
+                  )}
+
+                  {q.approach && (
+                    <p className="text-[11px] text-slate-400 leading-relaxed font-sans bg-dark-950 p-2 rounded-lg border border-dark-800/80">
+                      💡 {q.approach}
+                    </p>
+                  )}
 
                   {/* Trap Box (if present) */}
                   {q.mistake && (
@@ -388,8 +457,9 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
               <tr>
                 <th className="py-3 px-3 w-10 text-center" title="Curriculum Sequence Number (1-80)">#</th>
                 <th className="py-3 px-3 w-24 text-center" title="Official LeetCode Problem Number">LeetCode #</th>
-                <th className="py-3 px-4">Topic</th>
-                <th className="py-3 px-4">Problem</th>
+                <th className="py-3 px-3">Phase</th>
+                <th className="py-3 px-3">Topic</th>
+                <th className="py-3 px-4">Problem & Core Pattern</th>
                 <th className="py-3 px-3 text-center">Difficulty</th>
                 <th className="py-3 px-3 text-center">Status</th>
                 <th className="py-3 px-3 text-center">Solve Type</th>
@@ -400,18 +470,18 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
             <tbody className="divide-y divide-dark-800/60 font-sans">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-slate-500 font-mono">
+                  <td colSpan={10} className="py-8 text-center text-slate-500 font-mono">
                     Loading questions...
                   </td>
                 </tr>
-              ) : questions.length === 0 ? (
+              ) : displayedQuestions.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-slate-500 font-mono">
+                  <td colSpan={10} className="py-8 text-center text-slate-500 font-mono">
                     No questions found matching your filter criteria.
                   </td>
                 </tr>
               ) : (
-                questions.map((q) => {
+                displayedQuestions.map((q) => {
                   const fallbackSearchUrl = `https://leetcode.com/problemset/all/?search=${q.leetcodeNumber || encodeURIComponent(q.title)}`;
                   const directUrl = q.problemUrl || fallbackSearchUrl;
 
@@ -433,12 +503,23 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
                         </span>
                       </td>
 
-                      {/* 3. Topic */}
-                      <td className="py-3 px-4 font-mono text-slate-300">
+                      {/* 3. Phase */}
+                      <td className="py-3 px-3 font-mono">
+                        {q.phase ? (
+                          <span className={`badge ${q.phase === 'Phase 1A' ? 'badge-indigo' : 'badge-purple'} text-[10px]`}>
+                            {q.phase}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
+                      </td>
+
+                      {/* 4. Topic */}
+                      <td className="py-3 px-3 font-mono text-slate-300">
                         <span className="badge badge-slate text-[10px]">{q.topic}</span>
                       </td>
 
-                      {/* 4. Title & Mistakes */}
+                      {/* 5. Title & Core Pattern */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-white group-hover:text-brand-400 transition-colors">
@@ -448,28 +529,38 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
                             <span className="badge badge-rose text-[9px]">Revision</span>
                           )}
                         </div>
+                        {q.subPattern && (
+                          <p className="text-[11px] text-indigo-300/80 font-mono mt-0.5 truncate max-w-sm">
+                            🎯 {q.subPattern}
+                          </p>
+                        )}
+                        {q.approach && (
+                          <p className="text-[10px] text-slate-400 truncate max-w-sm mt-0.5">
+                            💡 {q.approach}
+                          </p>
+                        )}
                         {q.mistake && (
-                          <p className="text-[11px] text-rose-300/80 font-mono truncate max-w-md mt-0.5">
-                            Trap: {q.mistake}
+                          <p className="text-[11px] text-rose-300/80 font-mono truncate max-w-sm mt-0.5">
+                            ⚠️ Trap: {q.mistake}
                           </p>
                         )}
                       </td>
 
-                      {/* 5. Difficulty */}
+                      {/* 6. Difficulty */}
                       <td className="py-3 px-3 text-center">
                         <span className={`badge ${getDifficultyBadge(q.difficulty)} text-[10px]`}>
                           {q.difficulty}
                         </span>
                       </td>
 
-                      {/* 6. Status */}
+                      {/* 7. Status */}
                       <td className="py-3 px-3 text-center">
                         <span className={`badge ${getStatusBadge(q.status)} text-[10px]`}>
                           {q.status.replace('_', ' ')}
                         </span>
                       </td>
 
-                      {/* 7. Solve Type */}
+                      {/* 8. Solve Type */}
                       <td className="py-3 px-3 text-center font-mono text-[11px]">
                         {q.status === 'SOLVED' ? (
                           q.solvedMyself ? (
@@ -482,12 +573,12 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
                         )}
                       </td>
 
-                      {/* 8. Complexity */}
+                      {/* 9. Complexity */}
                       <td className="py-3 px-3 text-center font-mono text-[11px] text-slate-400">
                         {q.timeComplexity ? `${q.timeComplexity}` : '—'}
                       </td>
 
-                      {/* 9. Actions */}
+                      {/* 10. Actions */}
                       <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
                           {/* Direct LeetCode Link */}
@@ -530,16 +621,18 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
         </div>
       </div>
 
-      {/* Detail & Reflection Modal */}
+      {/* 4. Modals */}
       <QuestionDetailModal
         question={selectedQuestion}
         isOpen={isDetailOpen}
-        onClose={() => setIsDetailOpen(false)}
+        onClose={() => {
+          setIsDetailOpen(false);
+          setSelectedQuestion(null);
+        }}
         onUpdated={loadDsaQuestions}
-        onLogSession={(task) => onOpenLogger('DSA', task)}
+        onLogSession={(title) => onOpenLogger('DSA', title)}
       />
 
-      {/* Import Modal */}
       <ImportModal
         type="DSA"
         isOpen={isImportOpen}

@@ -114,7 +114,13 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
               <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
                 LC #{lcNum}
               </span>
+              {question.phase && (
+                <span className="badge badge-purple text-[10px]">{question.phase}</span>
+              )}
               <span className="badge badge-indigo text-[10px]">{question.topic}</span>
+              {question.subPattern && (
+                <span className="badge badge-slate text-[10px]">{question.subPattern}</span>
+              )}
               <span className={`badge ${getDifficultyBadge(question.difficulty)} text-[10px]`}>
                 {question.difficulty}
               </span>
