@@ -71,6 +71,7 @@ export interface DashboardData {
 export interface DSAQuestion {
   id: string;
   number: number;
+  leetcodeNumber?: number;
   topic: string;
   title: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
@@ -203,3 +204,43 @@ export interface DailyReview {
   tomorrowPriority?: string;
   planningChanges: number;
 }
+
+export interface CumulativeGrowthDay {
+  day: number;
+  date: string;
+  dayName: string;
+  isPastOrToday: boolean;
+  isToday: boolean;
+  dsaSolved: number;
+  isMissed: boolean;
+  dsaPenalty: number;
+  dsaDelta: number;
+  dsaCumulative: number | null;
+  dsaTargetPace: number;
+  dsaGoal: number;
+  featuresDeployed: number;
+  projectDelta: number;
+  projectCumulative: number | null;
+  projectTargetPace: number;
+  projectGoal: number;
+  totalMinutes: number;
+  taskTitles: string[];
+}
+
+export interface CumulativeGrowthData {
+  month: string;
+  monthName: string;
+  totalDays: number;
+  currentDay: number;
+  dsaTargetGoal: number;
+  currentDsaCumulative: number;
+  dsaPercentOfGoal: number;
+  projectTargetGoal: number;
+  currentProjectCumulative: number;
+  projectPercentOfGoal: number;
+  totalMissedDays: number;
+  totalPenalties: number;
+  totalRecovered: number;
+  days: CumulativeGrowthDay[];
+}
+

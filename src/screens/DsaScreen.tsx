@@ -4,6 +4,7 @@ import {
   Search,
   Upload,
   Play,
+  Download,
 } from 'lucide-react';
 import { DSAQuestion, DSAOverview, DSATopicStat } from '../types';
 import { api } from '../services/api';
@@ -106,6 +107,15 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
           </div>
 
           <div className="flex items-center gap-2.5">
+            <a
+              href="/api/export/dsa"
+              download
+              className="btn-secondary text-xs flex items-center gap-1.5 hover:text-indigo-300 hover:border-indigo-500/40"
+              title="Download all 80 DSA questions, approaches, notes & solutions as CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Export CSV</span>
+            </a>
             <button
               onClick={() => setIsImportOpen(true)}
               className="btn-secondary text-xs"
@@ -198,7 +208,7 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search problem title, topic, or mistakes..."
+            placeholder="Search by title, topic, LC # (e.g. 1480, 53, 1), or mistakes..."
             className="w-full bg-dark-950 border border-dark-800 rounded-lg pl-9 pr-3.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
           />
         </div>
@@ -247,7 +257,8 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
           <table className="w-full text-left text-xs">
             <thead className="bg-dark-950/80 border-b border-dark-800 font-mono text-[11px] text-slate-400 uppercase">
               <tr>
-                <th className="py-3 px-4 w-12 text-center">#</th>
+                <th className="py-3 px-3 w-10 text-center" title="Curriculum Sequence Number (1-80)">#</th>
+                <th className="py-3 px-3 w-24 text-center" title="Official LeetCode Problem Number">LeetCode #</th>
                 <th className="py-3 px-4">Topic</th>
                 <th className="py-3 px-4">Problem</th>
                 <th className="py-3 px-3 text-center">Difficulty</th>
@@ -260,99 +271,130 @@ export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
             <tbody className="divide-y divide-dark-800/60 font-sans">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-500 font-mono">
+                  <td colSpan={9} className="py-8 text-center text-slate-500 font-mono">
                     Loading questions...
                   </td>
                 </tr>
               ) : questions.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-500 font-mono">
+                  <td colSpan={9} className="py-8 text-center text-slate-500 font-mono">
                     No questions found matching your filter criteria.
                   </td>
                 </tr>
               ) : (
-                questions.map((q) => (
-                  <tr
-                    key={q.id}
-                    onClick={() => openQuestionModal(q)}
-                    className="table-row-hover cursor-pointer group"
-                  >
-                    <td className="py-3 px-4 text-center font-mono text-slate-400 font-bold">
-                      {q.number}
-                    </td>
+                questions.map((q) => {
+                  const fallbackSearchUrl = `https://leetcode.com/problemset/all/?search=${q.leetcodeNumber || encodeURIComponent(q.title)}`;
+                  const directUrl = q.problemUrl || fallbackSearchUrl;
 
-                    <td className="py-3 px-4 font-mono text-slate-300">
-                      <span className="badge badge-slate text-[10px]">{q.topic}</span>
-                    </td>
+                  return (
+                    <tr
+                      key={q.id}
+                      onClick={() => openQuestionModal(q)}
+                      className="table-row-hover cursor-pointer group"
+                    >
+                      {/* 1. Sequence Number */}
+                      <td className="py-3 px-3 text-center font-mono text-slate-400 font-medium">
+                        {q.number}
+                      </td>
 
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-white group-hover:text-brand-400 transition-colors">
-                          {q.title}
+                      {/* 2. Official LeetCode Question Number Badge */}
+                      <td className="py-3 px-3 text-center font-mono">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 group-hover:border-amber-400 group-hover:bg-amber-500/20 transition-colors">
+                          LC #{q.leetcodeNumber || q.number}
                         </span>
-                        {q.needsRevision && (
-                          <span className="badge badge-rose text-[9px]">Revision</span>
+                      </td>
+
+                      {/* 3. Topic */}
+                      <td className="py-3 px-4 font-mono text-slate-300">
+                        <span className="badge badge-slate text-[10px]">{q.topic}</span>
+                      </td>
+
+                      {/* 4. Title & Mistakes */}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-white group-hover:text-brand-400 transition-colors">
+                            {q.title}
+                          </span>
+                          {q.needsRevision && (
+                            <span className="badge badge-rose text-[9px]">Revision</span>
+                          )}
+                        </div>
+                        {q.mistake && (
+                          <p className="text-[11px] text-rose-300/80 font-mono truncate max-w-md mt-0.5">
+                            Trap: {q.mistake}
+                          </p>
                         )}
-                      </div>
-                      {q.mistake && (
-                        <p className="text-[11px] text-rose-300/80 font-mono truncate max-w-md mt-0.5">
-                          Trap: {q.mistake}
-                        </p>
-                      )}
-                    </td>
+                      </td>
 
-                    <td className="py-3 px-3 text-center">
-                      <span className={`badge ${getDifficultyBadge(q.difficulty)} text-[10px]`}>
-                        {q.difficulty}
-                      </span>
-                    </td>
+                      {/* 5. Difficulty */}
+                      <td className="py-3 px-3 text-center">
+                        <span className={`badge ${getDifficultyBadge(q.difficulty)} text-[10px]`}>
+                          {q.difficulty}
+                        </span>
+                      </td>
 
-                    <td className="py-3 px-3 text-center">
-                      <span className={`badge ${getStatusBadge(q.status)} text-[10px]`}>
-                        {q.status.replace('_', ' ')}
-                      </span>
-                    </td>
+                      {/* 6. Status */}
+                      <td className="py-3 px-3 text-center">
+                        <span className={`badge ${getStatusBadge(q.status)} text-[10px]`}>
+                          {q.status.replace('_', ' ')}
+                        </span>
+                      </td>
 
-                    <td className="py-3 px-3 text-center font-mono text-[11px]">
-                      {q.status === 'SOLVED' ? (
-                        q.solvedMyself ? (
-                          <span className="text-emerald-400 font-medium">✨ Self</span>
+                      {/* 7. Solve Type */}
+                      <td className="py-3 px-3 text-center font-mono text-[11px]">
+                        {q.status === 'SOLVED' ? (
+                          q.solvedMyself ? (
+                            <span className="text-emerald-400 font-medium">✨ Self</span>
+                          ) : (
+                            <span className="text-amber-400 font-medium">💡 Needed Help</span>
+                          )
                         ) : (
-                          <span className="text-amber-400 font-medium">💡 Needed Help</span>
-                        )
-                      ) : (
-                        <span className="text-slate-500">—</span>
-                      )}
-                    </td>
+                          <span className="text-slate-500">—</span>
+                        )}
+                      </td>
 
-                    <td className="py-3 px-3 text-center font-mono text-[11px] text-slate-400">
-                      {q.timeComplexity ? `${q.timeComplexity}` : '—'}
-                    </td>
+                      {/* 8. Complexity */}
+                      <td className="py-3 px-3 text-center font-mono text-[11px] text-slate-400">
+                        {q.timeComplexity ? `${q.timeComplexity}` : '—'}
+                      </td>
 
-                    <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-2">
-                        {q.problemUrl && (
+                      {/* 9. Actions */}
+                      <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Direct LeetCode Link */}
                           <a
-                            href={q.problemUrl}
+                            href={directUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="p-1.5 text-slate-400 hover:text-brand-400 hover:bg-dark-800 rounded-lg transition-colors"
-                            title="Open Problem"
+                            title={`Open LeetCode #${q.leetcodeNumber || q.number} (${q.title})`}
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
-                        )}
-                        <button
-                          onClick={() => onOpenLogger('DSA', `DSA #${q.number}: ${q.title}`)}
-                          className="btn-secondary py-1 px-2 text-[10px]"
-                          title="Log study session"
-                        >
-                          Log Time
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+
+                          {/* Fallback Search Link (if link is broken or moved) */}
+                          <a
+                            href={fallbackSearchUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-dark-800 rounded-lg transition-colors"
+                            title={`Search LeetCode for #${q.leetcodeNumber || q.number} (Fallback if direct link is broken)`}
+                          >
+                            <Search className="w-3.5 h-3.5" />
+                          </a>
+
+                          <button
+                            onClick={() => onOpenLogger('DSA', `DSA #${q.number} (LC #${q.leetcodeNumber || q.number}): ${q.title}`)}
+                            className="btn-secondary py-1 px-2 text-[10px]"
+                            title="Log study session"
+                          >
+                            Log Time
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

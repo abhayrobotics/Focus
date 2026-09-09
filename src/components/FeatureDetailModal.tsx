@@ -73,9 +73,9 @@ export const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-950/80 backdrop-blur-sm animate-fade-in">
       <div className="bg-dark-900 border border-dark-800 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-in">
         {/* Header */}
-        <div className="p-5 border-b border-dark-800 flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
+        <div className="p-4 sm:p-5 border-b border-dark-800 flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
               <span className="badge badge-slate text-[10px]">{category}</span>
               <span className={`badge ${priority === 'HIGH' ? 'badge-rose' : priority === 'MEDIUM' ? 'badge-amber' : 'badge-slate'} text-[10px]`}>
                 {priority} Priority
@@ -86,10 +86,10 @@ export const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                 <span className="badge badge-slate text-[10px]">Future Phase Idea</span>
               )}
             </div>
-            <h2 className="text-base font-bold text-white tracking-tight">{name}</h2>
+            <h2 className="text-sm sm:text-base font-bold text-white tracking-tight break-words">{name}</h2>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {onLogSession && (
               <button
                 type="button"
@@ -97,7 +97,7 @@ export const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                 className="btn-secondary text-xs"
               >
                 <Clock className="w-3.5 h-3.5 text-brand-400" />
-                <span>Log Time</span>
+                <span className="hidden sm:inline">Log Time</span>
               </button>
             )}
             <button
@@ -164,11 +164,11 @@ export const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
           <div className="space-y-1">
             <label className="text-xs font-mono text-slate-400 font-bold uppercase">Feature Description</label>
             <textarea
-              rows={2}
+              rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Feature functional overview..."
-              className="w-full bg-dark-950 border border-dark-800 rounded-lg p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 resize-none"
+              placeholder="Feature functional overview and technical deliverable..."
+              className="w-full min-h-[80px] bg-dark-950 border border-dark-800 rounded-lg p-3 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 resize-y leading-relaxed break-words"
             />
           </div>
 
@@ -180,7 +180,7 @@ export const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
               value={technicalNotes}
               onChange={(e) => setTechnicalNotes(e.target.value)}
               placeholder="Prisma models, database indexes, state management details..."
-              className="w-full bg-dark-950 border border-dark-800 rounded-lg p-3 text-xs text-emerald-300 font-mono focus:outline-none focus:border-brand-500 resize-none"
+              className="w-full min-h-[90px] bg-dark-950 border border-dark-800 rounded-lg p-3 text-xs sm:text-sm text-emerald-300 font-mono focus:outline-none focus:border-brand-500 resize-y leading-relaxed break-words"
             />
           </div>
 

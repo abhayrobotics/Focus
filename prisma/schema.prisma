@@ -25,7 +25,8 @@ model DSAQuestion {
   id              String    @id @default(cuid())
   userId          String
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  number          Int       // 1 to 80
+  number          Int       // 1 to 80 (Curriculum sequence index)
+  leetcodeNumber  Int?      // Official LeetCode problem number (e.g. 1480, 724, 1, 53, etc.)
   topic           String    // Array, HashMap, Two Pointer, Sliding Window, Binary Search, Stack, Queue, LinkedList, Recursion
   title           String
   difficulty      String    // Easy, Medium, Hard

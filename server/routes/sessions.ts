@@ -25,6 +25,50 @@ sessionsRouter.get('/', async (req, res) => {
   }
 });
 
+// Helper to recalculate daily review stats for a given date
+async function recalculateDailyReview(dateStr: string, userId?: string) {
+  try {
+    const effectiveUserId = userId || (await prisma.user.findFirst())?.id;
+    if (!effectiveUserId) return;
+
+    const daySessions = await prisma.workSession.findMany({ where: { date: dateStr } });
+    const totalDayMin = daySessions.reduce((acc, s) => acc + s.durationMinutes, 0);
+    const actualHours = parseFloat((totalDayMin / 60).toFixed(2));
+
+    const dObj = new Date(dateStr);
+    const isWknd = dObj.getDay() === 0 || dObj.getDay() === 6;
+    const targetHours = isWknd ? 6.0 : 4.0;
+
+    await prisma.dailyReview.upsert({
+      where: {
+        userId_date: {
+          userId: effectiveUserId,
+          date: dateStr,
+        },
+      },
+      update: {
+        actualHours,
+        didDsa: daySessions.some((s) => s.category === 'DSA'),
+        didProject: daySessions.some((s) => s.category === 'PROJECT'),
+        didInterview: daySessions.some((s) => s.category === 'INTERVIEW'),
+        completedPlanned: actualHours >= 3.5,
+      },
+      create: {
+        userId: effectiveUserId,
+        date: dateStr,
+        targetHours,
+        actualHours,
+        didDsa: daySessions.some((s) => s.category === 'DSA'),
+        didProject: daySessions.some((s) => s.category === 'PROJECT'),
+        didInterview: daySessions.some((s) => s.category === 'INTERVIEW'),
+        completedPlanned: actualHours >= 3.5,
+      },
+    });
+  } catch (err) {
+    console.error(`Error recalculating review for ${dateStr}:`, err);
+  }
+}
+
 // 2. Fast Log a new work session (< 10s log)
 sessionsRouter.post('/', async (req, res) => {
   try {
@@ -51,41 +95,7 @@ sessionsRouter.post('/', async (req, res) => {
       },
     });
 
-    // Automatically recalculate and upsert daily review stats
-    const daySessions = await prisma.workSession.findMany({ where: { date: sessionDate } });
-    const totalDayMin = daySessions.reduce((acc, s) => acc + s.durationMinutes, 0);
-    const actualHours = parseFloat((totalDayMin / 60).toFixed(2));
-    
-    const dObj = new Date(sessionDate);
-    const isWknd = dObj.getDay() === 0 || dObj.getDay() === 6;
-    const targetHours = isWknd ? 6.0 : 4.0;
-
-    await prisma.dailyReview.upsert({
-      where: {
-        userId_date: {
-          userId: user.id,
-          date: sessionDate,
-        },
-      },
-      update: {
-        actualHours,
-        didDsa: daySessions.some((s) => s.category === 'DSA'),
-        didProject: daySessions.some((s) => s.category === 'PROJECT'),
-        didInterview: daySessions.some((s) => s.category === 'INTERVIEW'),
-        completedPlanned: actualHours >= 3.5,
-      },
-      create: {
-        userId: user.id,
-        date: sessionDate,
-        targetHours,
-        actualHours,
-        didDsa: daySessions.some((s) => s.category === 'DSA'),
-        didProject: daySessions.some((s) => s.category === 'PROJECT'),
-        didInterview: daySessions.some((s) => s.category === 'INTERVIEW'),
-        completedPlanned: actualHours >= 3.5,
-      },
-    });
-
+    await recalculateDailyReview(sessionDate, user.id);
     res.json(session);
   } catch (err: any) {
     console.error('Error logging work session:', err);
@@ -93,23 +103,91 @@ sessionsRouter.post('/', async (req, res) => {
   }
 });
 
-// 3. Delete session
+// 3. Update / Change an existing work session
+sessionsRouter.put('/:id', async (req, res) => {
+  try {
+    const { category, durationMinutes, taskTitle, notes, date } = req.body;
+    const existing = await prisma.workSession.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: 'Session not found.' });
+
+    const updated = await prisma.workSession.update({
+      where: { id: req.params.id },
+      data: {
+        category: category !== undefined ? category : existing.category,
+        durationMinutes: durationMinutes !== undefined ? parseInt(durationMinutes, 10) : existing.durationMinutes,
+        taskTitle: taskTitle !== undefined ? taskTitle : existing.taskTitle,
+        notes: notes !== undefined ? notes : existing.notes,
+        date: date !== undefined ? date : existing.date,
+      },
+    });
+
+    // Recalculate review for original date and new date if date changed
+    await recalculateDailyReview(existing.date);
+    if (updated.date !== existing.date) {
+      await recalculateDailyReview(updated.date);
+    }
+
+    res.json(updated);
+  } catch (err: any) {
+    console.error('Error updating work session:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. Clean up / Remove duplicate work session logs
+sessionsRouter.post('/deduplicate', async (req, res) => {
+  try {
+    const allSessions = await prisma.workSession.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const seen = new Map<string, string>(); // Key: date|category|taskTitle|duration -> First Session ID
+    const duplicateIds: string[] = [];
+    const affectedDates = new Set<string>();
+
+    for (const session of allSessions) {
+      // Create unique signature
+      const key = `${session.date.trim()}|${session.category.trim()}|${session.taskTitle.trim().toLowerCase()}|${session.durationMinutes}`;
+      if (seen.has(key)) {
+        duplicateIds.push(session.id);
+        affectedDates.add(session.date);
+      } else {
+        seen.set(key, session.id);
+      }
+    }
+
+    if (duplicateIds.length > 0) {
+      await prisma.workSession.deleteMany({
+        where: { id: { in: duplicateIds } },
+      });
+
+      for (const dStr of affectedDates) {
+        await recalculateDailyReview(dStr);
+      }
+    }
+
+    res.json({
+      success: true,
+      removedCount: duplicateIds.length,
+      affectedDates: Array.from(affectedDates),
+      message: duplicateIds.length > 0
+        ? `Cleaned up ${duplicateIds.length} duplicate work session log(s).`
+        : 'No duplicate work sessions detected. All logs are unique.',
+    });
+  } catch (err: any) {
+    console.error('Error deduplicating sessions:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. Delete session
 sessionsRouter.delete('/:id', async (req, res) => {
   try {
     const session = await prisma.workSession.findUnique({ where: { id: req.params.id } });
     if (!session) return res.status(404).json({ error: 'Session not found.' });
 
     await prisma.workSession.delete({ where: { id: req.params.id } });
-
-    // Recalculate daily review
-    const daySessions = await prisma.workSession.findMany({ where: { date: session.date } });
-    const totalDayMin = daySessions.reduce((acc, s) => acc + s.durationMinutes, 0);
-    const actualHours = parseFloat((totalDayMin / 60).toFixed(2));
-
-    await prisma.dailyReview.updateMany({
-      where: { date: session.date },
-      data: { actualHours },
-    });
+    await recalculateDailyReview(session.date);
 
     res.json({ success: true, message: 'Session deleted.' });
   } catch (err: any) {

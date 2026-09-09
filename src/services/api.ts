@@ -10,6 +10,7 @@ import {
   ParkedIdea,
   HeatmapDay,
   DailyReview,
+  CumulativeGrowthData,
 } from '../types';
 
 const API_BASE = '/api';
@@ -112,7 +113,23 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectId, features }),
     });
-    if (!res.ok) throw new Error('Failed to import project features');
+    if (!res.ok) throw new Error('Failed to import features');
+    return res.json();
+  },
+
+  resetProjectProgress: async () => {
+    const res = await fetch(`${API_BASE}/projects/reset-progress`, {
+      method: 'POST',
+    });
+    if (!res.ok) throw new Error('Failed to reset project progress');
+    return res.json();
+  },
+
+  seedGridOpsMvp: async () => {
+    const res = await fetch(`${API_BASE}/projects/seed-gridops`, {
+      method: 'POST',
+    });
+    if (!res.ok) throw new Error('Failed to seed GridOps MVP checklist');
     return res.json();
   },
 
@@ -136,6 +153,34 @@ export const api = {
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error('Failed to update topic');
+    return res.json();
+  },
+
+  addInterviewTopic: async (data: Partial<InterviewTopic>): Promise<InterviewTopic> => {
+    const res = await fetch(`${API_BASE}/interview/topics`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to create interview topic');
+    return res.json();
+  },
+
+  deleteInterviewTopic: async (id: string): Promise<{ success: boolean; message?: string }> => {
+    const res = await fetch(`${API_BASE}/interview/topics/${id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Failed to delete interview topic');
+    return res.json();
+  },
+
+  importInterviewTopics: async (topics: any[], replaceAll = false) => {
+    const res = await fetch(`${API_BASE}/interview/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topics, replaceAll }),
+    });
+    if (!res.ok) throw new Error('Failed to import interview topics');
     return res.json();
   },
 
@@ -163,9 +208,28 @@ export const api = {
     return res.json();
   },
 
-  deleteWorkSession: async (id: string) => {
+  updateWorkSession: async (id: string, data: Partial<WorkSession>): Promise<WorkSession> => {
+    const res = await fetch(`${API_BASE}/work-sessions/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to update work session');
+    return res.json();
+  },
+
+  deleteWorkSession: async (id: string): Promise<{ success: boolean; message?: string }> => {
     const res = await fetch(`${API_BASE}/work-sessions/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Failed to delete session');
+    return res.json();
+  },
+
+  deduplicateWorkSessions: async (): Promise<{ success: boolean; removedCount: number; message: string }> => {
+    const res = await fetch(`${API_BASE}/work-sessions/deduplicate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Failed to deduplicate work sessions');
     return res.json();
   },
 
@@ -215,6 +279,13 @@ export const api = {
     const query = year ? `?year=${year}` : '';
     const res = await fetch(`${API_BASE}/growth/heatmap${query}`);
     if (!res.ok) throw new Error('Failed to fetch heatmap data');
+    return res.json();
+  },
+
+  getCumulativeGrowth: async (month?: string): Promise<CumulativeGrowthData> => {
+    const query = month ? `?month=${month}` : '';
+    const res = await fetch(`${API_BASE}/growth/cumulative${query}`);
+    if (!res.ok) throw new Error('Failed to fetch cumulative growth data');
     return res.json();
   },
 

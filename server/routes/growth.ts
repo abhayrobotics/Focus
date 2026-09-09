@@ -16,6 +16,17 @@ growthRouter.get('/heatmap', async (req, res) => {
   }
 });
 
+// 1.5 Get Month Cumulative Growth Trajectory (DSA 80 Target, Project 100% Target, Missed Day Penalties)
+growthRouter.get('/cumulative', async (req, res) => {
+  try {
+    const month = req.query.month ? String(req.query.month) : undefined;
+    const metrics = await AnalyticsEngine.getCumulativeGrowthMetrics(month);
+    res.json(metrics);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 2. Get review for a date
 growthRouter.get('/review', async (req, res) => {
   try {

@@ -28,10 +28,11 @@ export class RecommendationEngine {
     });
 
     if (nextDsaQuestion) {
+      const lcBadge = nextDsaQuestion.leetcodeNumber ? ` (LC #${nextDsaQuestion.leetcodeNumber})` : '';
       actions.push({
         id: `rec_dsa_${nextDsaQuestion.id}`,
         category: 'DSA',
-        title: `Solve DSA #${nextDsaQuestion.number} — ${nextDsaQuestion.topic}`,
+        title: `Solve DSA #${nextDsaQuestion.number}${lcBadge} — ${nextDsaQuestion.topic}`,
         subtitle: `${nextDsaQuestion.title} (${nextDsaQuestion.difficulty})`,
         durationMinutes: nextDsaQuestion.difficulty === 'Easy' ? 30 : nextDsaQuestion.difficulty === 'Medium' ? 45 : 60,
         priorityScore: 98,
@@ -60,6 +61,7 @@ export class RecommendationEngine {
     });
 
     if (nextProjectFeature && nextProjectFeature.nextAction) {
+      const projName = nextProjectFeature.project?.name || 'Employee Grievance Management System';
       actions.push({
         id: `rec_proj_${nextProjectFeature.id}`,
         category: 'PROJECT',
@@ -67,7 +69,7 @@ export class RecommendationEngine {
         subtitle: nextProjectFeature.nextAction,
         durationMinutes: 90,
         priorityScore: 95,
-        reason: `Primary MVP deliverable for ${nextProjectFeature.project.name} (${nextProjectFeature.progress}% complete).`,
+        reason: `Primary MVP deliverable for ${projName} (${nextProjectFeature.progress}% complete).`,
         targetId: nextProjectFeature.id,
       });
     }

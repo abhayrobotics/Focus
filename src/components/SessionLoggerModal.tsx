@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { X, Check, Code2, FolderGit2, Target, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Check, Code2, FolderGit2, Target, Sparkles, Trash2, Calendar } from 'lucide-react';
 import { api } from '../services/api';
 import { format } from 'date-fns';
+import { WorkSession } from '../types';
 
 interface SessionLoggerModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface SessionLoggerModalProps {
   onSessionLogged: () => void;
   initialCategory?: 'DSA' | 'PROJECT' | 'INTERVIEW' | 'OTHER';
   initialTask?: string;
+  sessionToEdit?: WorkSession | null;
 }
 
 export const SessionLoggerModal: React.FC<SessionLoggerModalProps> = ({
@@ -17,12 +19,31 @@ export const SessionLoggerModal: React.FC<SessionLoggerModalProps> = ({
   onSessionLogged,
   initialCategory = 'DSA',
   initialTask = '',
+  sessionToEdit = null,
 }) => {
   const [category, setCategory] = useState<'DSA' | 'PROJECT' | 'INTERVIEW' | 'OTHER'>(initialCategory);
   const [durationMinutes, setDurationMinutes] = useState<number>(45);
   const [taskTitle, setTaskTitle] = useState(initialTask || 'Solved Sliding Window problem');
   const [notes, setNotes] = useState('');
+  const [sessionDate, setSessionDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    if (sessionToEdit) {
+      setCategory(sessionToEdit.category as any);
+      setDurationMinutes(sessionToEdit.durationMinutes);
+      setTaskTitle(sessionToEdit.taskTitle);
+      setNotes(sessionToEdit.notes || '');
+      setSessionDate(sessionToEdit.date);
+    } else {
+      setCategory(initialCategory);
+      setDurationMinutes(45);
+      setTaskTitle(initialTask || '');
+      setNotes('');
+      setSessionDate(format(new Date(), 'yyyy-MM-dd'));
+    }
+  }, [sessionToEdit, initialCategory, initialTask, isOpen]);
 
   if (!isOpen) return null;
 
@@ -34,19 +55,45 @@ export const SessionLoggerModal: React.FC<SessionLoggerModalProps> = ({
 
     try {
       setIsSubmitting(true);
-      await api.logWorkSession({
-        category,
-        durationMinutes,
-        taskTitle: taskTitle.trim(),
-        notes: notes.trim(),
-        date: format(new Date(), 'yyyy-MM-dd'),
-      });
+      if (sessionToEdit) {
+        await api.updateWorkSession(sessionToEdit.id, {
+          category,
+          durationMinutes,
+          taskTitle: taskTitle.trim(),
+          notes: notes.trim(),
+          date: sessionDate,
+        });
+      } else {
+        await api.logWorkSession({
+          category,
+          durationMinutes,
+          taskTitle: taskTitle.trim(),
+          notes: notes.trim(),
+          date: sessionDate,
+        });
+      }
       onSessionLogged();
       onClose();
     } catch (err) {
-      console.error('Error logging work session:', err);
+      console.error('Error saving work session:', err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!sessionToEdit) return;
+    if (!window.confirm(`Delete log "${sessionToEdit.taskTitle}" (${sessionToEdit.durationMinutes}m)?`)) return;
+
+    try {
+      setIsDeleting(true);
+      await api.deleteWorkSession(sessionToEdit.id);
+      onSessionLogged();
+      onClose();
+    } catch (err) {
+      console.error('Error deleting work session:', err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -57,11 +104,15 @@ export const SessionLoggerModal: React.FC<SessionLoggerModalProps> = ({
         <div className="p-5 border-b border-dark-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-brand-600/20 text-brand-400 flex items-center justify-center font-bold text-xs">
-              ⚡
+              {sessionToEdit ? '✏️' : '⚡'}
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white tracking-tight">Log Verified Work Session</h2>
-              <span className="text-[11px] font-mono text-slate-400">Only actual execution counts toward your daily target</span>
+              <h2 className="text-sm font-bold text-white tracking-tight">
+                {sessionToEdit ? 'Edit / Correct Work Session Log' : 'Log Verified Work Session'}
+              </h2>
+              <span className="text-[11px] font-mono text-slate-400">
+                {sessionToEdit ? 'Modify duration, category, or delete duplicate log' : 'Only actual execution counts toward your daily target'}
+              </span>
             </div>
           </div>
           <button
@@ -101,6 +152,23 @@ export const SessionLoggerModal: React.FC<SessionLoggerModalProps> = ({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Date Selector (If editing or logging for past date) */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-mono text-slate-400 uppercase tracking-wider font-semibold flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span>Log Date</span>
+              </span>
+              <span className="text-slate-400 font-normal">{sessionDate}</span>
+            </label>
+            <input
+              type="date"
+              value={sessionDate}
+              onChange={(e) => setSessionDate(e.target.value)}
+              className="w-full bg-dark-950 border border-dark-800 rounded-lg px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500 transition-colors font-mono"
+            />
           </div>
 
           {/* Quick Duration Chips */}
@@ -157,22 +225,44 @@ export const SessionLoggerModal: React.FC<SessionLoggerModalProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="pt-2 flex items-center justify-end gap-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="btn-primary"
-            >
-              <Check className="w-4 h-4" />
-              <span>{isSubmitting ? 'Logging...' : 'Save & Update Target'}</span>
-            </button>
+          <div className="pt-2 flex items-center justify-between gap-2.5">
+            <div>
+              {sessionToEdit && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="btn-danger text-xs py-1.5 px-3 flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isDeleting ? 'Deleting...' : 'Delete Log'}</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn-primary"
+              >
+                <Check className="w-4 h-4" />
+                <span>
+                  {isSubmitting
+                    ? 'Saving...'
+                    : sessionToEdit
+                    ? 'Save Changes'
+                    : 'Save & Update Target'}
+                </span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

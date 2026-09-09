@@ -1041,3 +1041,55 @@ No notification engine.
 No fancy architecture.
 Once this feels like a real usable product, you move to Meter Challenge.
 That keeps the MVP small while giving you a roadmap that can eventually become a serious utility operations platform.
+
+=======================================================
+GridOps — 25-Step MVP Completion Tracker
+=======================================================
+
+Phase 1 — Product & UI Foundation
+#	Task	Done
+1	Write the MVP scope: Login + Dashboard + Grievance Management + Analytics	☐
+2	Define user roles: Admin / Supervisor / Officer	☐
+3	Define grievance fields: ID, subject, category, consumer, location, dates, deadline, status, owner, priority, description	☐
+4	Define status workflow: Received → Assigned → In Progress → Forwarded → Resolved → Closed	☐
+5	Design the main screens: Login, Dashboard, Grievance List, Create Grievance, Grievance Details	☐
+
+The grievance data model and simple status workflow come directly from your original concept.
+
+Phase 2 — Backend & Database
+#	Task	Done
+6	Create backend project using Node.js + Express + TypeScript	☐
+7	Configure PostgreSQL + Prisma	☐
+8	Design core database tables: User, Role, Office, Grievance, GrievanceHistory, Attachment, Category, Status	☐
+9	Create Prisma schema and run first migration	☐
+10	Create seed data: users, roles, categories, statuses and 10–20 sample grievances	☐
+
+Your proposed architecture specifically recommends a modular monolith using React/TypeScript → Express → Prisma → PostgreSQL, rather than microservices.
+
+Phase 3 — Authentication
+#	Task	Done
+11	Create login API	☐
+12	Implement password hashing + JWT authentication	☐
+13	Create frontend login page and connect it to API	☐
+14	Protect dashboard/grievance routes and implement logout	☐
+
+Milestone: You can log in → reach dashboard → refresh page → remain authenticated.
+
+Phase 4 — Grievance Core
+#	Task	Done
+15	Build Create Grievance API + form	☐
+16	Build Grievance List API + table UI	☐
+17	Build Grievance Details page	☐
+18	Implement Assign / Change Owner	☐
+19	Implement Update Status	☐
+20	Implement Forward Grievance with receiving officer + note	☐
+
+This is the heart of the product: create, view, assign, forward and update grievances.
+
+Phase 5 — Accountability & Dashboard
+#	Task	Done
+21	Implement Grievance History — record every important action	☐
+22	Add deadline calculation and Pending / Due Today / Overdue logic	☐
+23	Build Dashboard cards: Total / Pending / Due Today / Overdue / Resolved	☐
+24	Build Attention Required table: grievance + owner + deadline + status	☐
+25	End-to-end test + responsive UI + error/loading states + deploy MVP	☐

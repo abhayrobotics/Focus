@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ExternalLink, Check, Save, RotateCcw, AlertCircle, Code2, Clock } from 'lucide-react';
+import { X, ExternalLink, Check, Save, RotateCcw, AlertCircle, Code2, Clock, Copy, Search, Link as LinkIcon } from 'lucide-react';
 import { DSAQuestion } from '../types';
 import { api } from '../services/api';
 
@@ -20,6 +20,8 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
 }) => {
   const [status, setStatus] = useState<string>('NOT_STARTED');
   const [solvedMyself, setSolvedMyself] = useState<boolean>(true);
+  const [leetcodeNumber, setLeetcodeNumber] = useState<string>('');
+  const [problemUrl, setProblemUrl] = useState<string>('');
   const [approach, setApproach] = useState<string>('');
   const [mistake, setMistake] = useState<string>('');
   const [solution, setSolution] = useState<string>('');
@@ -28,11 +30,14 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
   const [needsRevision, setNeedsRevision] = useState<boolean>(false);
   const [revisionNotes, setRevisionNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (question) {
       setStatus(question.status || 'NOT_STARTED');
       setSolvedMyself(question.solvedMyself !== false);
+      setLeetcodeNumber(question.leetcodeNumber ? String(question.leetcodeNumber) : '');
+      setProblemUrl(question.problemUrl || '');
       setApproach(question.approach || '');
       setMistake(question.mistake || '');
       setSolution(question.solution || '');
@@ -45,6 +50,13 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
 
   if (!isOpen || !question) return null;
 
+  const handleCopy = () => {
+    const text = `LeetCode #${question.leetcodeNumber || question.number}: ${question.title}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -52,6 +64,8 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
       await api.updateDsaQuestion(question.id, {
         status: status as any,
         solvedMyself,
+        leetcodeNumber: leetcodeNumber ? parseInt(leetcodeNumber, 10) : undefined,
+        problemUrl: problemUrl || undefined,
         approach,
         mistake,
         solution,
@@ -82,40 +96,89 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
     }
   };
 
+  const lcNum = question.leetcodeNumber || question.number;
+  const fallbackSearchUrl = `https://leetcode.com/problemset/all/?search=${lcNum || encodeURIComponent(question.title)}`;
+  const directUrl = question.problemUrl || fallbackSearchUrl;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-950/80 backdrop-blur-sm animate-fade-in">
       <div className="bg-dark-900 border border-dark-800 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="p-5 border-b border-dark-800 flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-brand-400 font-bold">#{question.number}</span>
+          <div className="space-y-1.5 flex-1 min-w-0">
+            {/* Meta Tags */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-mono text-slate-400 font-bold" title="Curriculum Sequence Index">
+                Seq #{question.number}
+              </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                LC #{lcNum}
+              </span>
               <span className="badge badge-indigo text-[10px]">{question.topic}</span>
               <span className={`badge ${getDifficultyBadge(question.difficulty)} text-[10px]`}>
                 {question.difficulty}
               </span>
             </div>
-            <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <span>{question.title}</span>
-              {question.problemUrl && (
+
+            {/* Title & Quick Actions */}
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <h2 className="text-base font-bold text-white tracking-tight truncate max-w-md">
+                {question.title}
+              </h2>
+
+              <div className="flex items-center gap-1.5">
+                {/* Copy Name & Number Button */}
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="p-1 px-2 text-[11px] font-mono rounded-md bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-dark-700 flex items-center gap-1 transition-colors"
+                  title="Copy LeetCode # and Title to clipboard"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-400" />
+                      <span className="text-emerald-400">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 text-slate-400" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Direct Link */}
                 <a
-                  href={question.problemUrl}
+                  href={directUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-slate-400 hover:text-brand-400 transition-colors"
-                  title="Open on LeetCode"
+                  className="p-1 px-2 text-[11px] font-mono rounded-md bg-brand-600/15 hover:bg-brand-600/25 text-brand-300 hover:text-white border border-brand-500/30 flex items-center gap-1 transition-colors"
+                  title="Open direct LeetCode link"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  <ExternalLink className="w-3 h-3" />
+                  <span>LeetCode</span>
                 </a>
-              )}
-            </h2>
+
+                {/* Fallback Search Link */}
+                <a
+                  href={fallbackSearchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 px-2 text-[11px] font-mono rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 border border-amber-500/30 flex items-center gap-1 transition-colors"
+                  title="Search LeetCode (Fallback if direct problem link fails or 404s)"
+                >
+                  <Search className="w-3 h-3" />
+                  <span>Search Fallback</span>
+                </a>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
             {onLogSession && (
               <button
                 type="button"
-                onClick={() => onLogSession(`DSA #${question.number}: ${question.title}`)}
+                onClick={() => onLogSession(`DSA #${question.number} (LC #${lcNum}): ${question.title}`)}
                 className="btn-secondary text-xs"
               >
                 <Clock className="w-3.5 h-3.5 text-brand-400" />
@@ -177,6 +240,36 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
                   💡 Needed Help
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* LeetCode Number & Direct URL Settings */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-dark-850/60 border border-dark-800">
+            <div className="space-y-1">
+              <label className="text-xs font-mono text-amber-300 font-bold uppercase flex items-center gap-1">
+                <span>LeetCode #</span>
+              </label>
+              <input
+                type="number"
+                value={leetcodeNumber}
+                onChange={(e) => setLeetcodeNumber(e.target.value)}
+                placeholder="e.g. 1480"
+                className="w-full bg-dark-950 border border-dark-800 rounded-lg px-3 py-1.5 text-xs text-amber-300 font-mono focus:outline-none focus:border-amber-500 font-bold"
+              />
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs font-mono text-slate-400 font-bold uppercase flex items-center gap-1">
+                <LinkIcon className="w-3 h-3" />
+                <span>Problem URL</span>
+              </label>
+              <input
+                type="text"
+                value={problemUrl}
+                onChange={(e) => setProblemUrl(e.target.value)}
+                placeholder="https://leetcode.com/problems/..."
+                className="w-full bg-dark-950 border border-dark-800 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-brand-500"
+              />
             </div>
           </div>
 

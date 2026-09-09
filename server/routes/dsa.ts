@@ -14,11 +14,20 @@ dsaRouter.get('/questions', async (req, res) => {
     if (status && status !== 'ALL') where.status = String(status);
     if (needsRevision === 'true') where.needsRevision = true;
     if (search) {
-      where.OR = [
-        { title: { contains: String(search) } },
-        { topic: { contains: String(search) } },
-        { mistake: { contains: String(search) } },
+      const searchStr = String(search).trim();
+      const numMatch = searchStr.replace(/[^0-9]/g, '');
+      const orConditions: any[] = [
+        { title: { contains: searchStr } },
+        { topic: { contains: searchStr } },
+        { mistake: { contains: searchStr } },
+        { approach: { contains: searchStr } },
       ];
+      if (numMatch) {
+        const parsedNum = parseInt(numMatch, 10);
+        orConditions.push({ leetcodeNumber: parsedNum });
+        orConditions.push({ number: parsedNum });
+      }
+      where.OR = orConditions;
     }
 
     const questions = await prisma.dSAQuestion.findMany({
@@ -114,13 +123,19 @@ dsaRouter.put('/questions/:id', async (req, res) => {
       needsRevision,
       revisionNotes,
       problemUrl,
+      leetcodeNumber,
     } = req.body;
 
     const data: any = {};
     if (status !== undefined) {
       data.status = status;
       if (status === 'SOLVED') {
-        data.dateSolved = new Date();
+        const existing = await prisma.dSAQuestion.findUnique({ where: { id: req.params.id } });
+        if (!existing?.dateSolved) {
+          data.dateSolved = new Date();
+        }
+      } else if (status === 'NOT_STARTED' || status === 'IN_PROGRESS') {
+        data.dateSolved = null;
       }
     }
     if (solvedMyself !== undefined) data.solvedMyself = Boolean(solvedMyself);
@@ -132,6 +147,7 @@ dsaRouter.put('/questions/:id', async (req, res) => {
     if (needsRevision !== undefined) data.needsRevision = Boolean(needsRevision);
     if (revisionNotes !== undefined) data.revisionNotes = revisionNotes;
     if (problemUrl !== undefined) data.problemUrl = problemUrl;
+    if (leetcodeNumber !== undefined) data.leetcodeNumber = leetcodeNumber ? parseInt(String(leetcodeNumber), 10) : null;
 
     const updated = await prisma.dSAQuestion.update({
       where: { id: req.params.id },
@@ -164,10 +180,13 @@ dsaRouter.post('/import', async (req, res) => {
       const q = questions[i];
       if (!q.title) continue;
 
+      const lcNum = q.leetcodeNumber || q.leetcodeNum || q.lcNumber || null;
+
       await prisma.dSAQuestion.create({
         data: {
           userId: user.id,
           number: q.number || i + 1,
+          leetcodeNumber: lcNum ? parseInt(String(lcNum), 10) : null,
           topic: q.topic || 'Array',
           title: q.title,
           difficulty: q.difficulty || 'Medium',

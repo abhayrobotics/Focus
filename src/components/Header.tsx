@@ -1,51 +1,57 @@
 import React from 'react';
-import { Plus, Sparkles, Calendar, Menu } from 'lucide-react';
+import { Plus, Sparkles, Calendar, Menu, Sun, Moon, Download } from 'lucide-react';
 import { ConsistencyStats } from '../types';
 import { format } from 'date-fns';
 
 interface HeaderProps {
   consistency?: ConsistencyStats;
   parkedCount?: number;
+  isDarkMode?: boolean;
+  onToggleTheme?: () => void;
   onOpenLogger: (initialCategory?: 'DSA' | 'PROJECT' | 'INTERVIEW') => void;
   onOpenParkingLot: () => void;
   onOpenDailyReview: () => void;
+  onOpenExport?: () => void;
   onToggleMobileMenu?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   consistency,
   parkedCount = 0,
+  isDarkMode = false,
+  onToggleTheme,
   onOpenLogger,
   onOpenParkingLot,
   onOpenDailyReview,
+  onOpenExport,
   onToggleMobileMenu,
 }) => {
   const todayFormatted = format(new Date(), 'EEEE, d MMMM yyyy');
   const shortDate = format(new Date(), 'dd MMM');
 
   return (
-    <header className="h-16 border-b border-dark-800 bg-dark-900/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-16 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
       {/* Mobile Hamburger + Date / Status */}
       <div className="flex items-center gap-3">
         {onToggleMobileMenu && (
           <button
             onClick={onToggleMobileMenu}
-            className="p-1.5 -ml-1 rounded-lg text-slate-300 hover:text-white hover:bg-dark-850 md:hidden border border-dark-800"
+            className="p-1.5 -ml-1 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-850 md:hidden border border-slate-200 dark:border-dark-800"
             title="Toggle Menu"
           >
             <Menu className="w-5 h-5" />
           </button>
         )}
 
-        <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+        <div className="flex items-center gap-2 text-xs font-mono text-slate-600 dark:text-slate-400">
           <Calendar className="w-3.5 h-3.5 text-slate-400 hidden sm:inline" />
           <span className="hidden sm:inline">{todayFormatted}</span>
-          <span className="sm:hidden text-white font-bold">{shortDate}</span>
+          <span className="sm:hidden text-slate-900 dark:text-white font-bold">{shortDate}</span>
         </div>
 
         {consistency && (
           <div className="hidden lg:flex items-center gap-2">
-            <span className="text-dark-700 font-bold">|</span>
+            <span className="text-slate-300 dark:text-dark-700 font-bold">|</span>
             {consistency.todayStatus === 'TARGET_MET' ? (
               <span className="badge badge-emerald">
                 🏆 Target Met ({consistency.todayActualHours}h)
@@ -65,6 +71,39 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Action Buttons */}
       <div className="flex items-center gap-2 sm:gap-2.5">
+        {/* Download CSV / Export Data Button */}
+        {onOpenExport && (
+          <button
+            onClick={onOpenExport}
+            title="Download CSV / Database Backup"
+            className="btn-secondary py-1.5 px-2.5 sm:px-3 text-xs flex items-center gap-1.5 hover:border-emerald-500/50 hover:text-emerald-500 dark:hover:text-emerald-300"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+            <span className="hidden sm:inline">Download CSV</span>
+          </button>
+        )}
+
+        {/* Theme Toggle (Light / Dark Mode) */}
+        {onToggleTheme && (
+          <button
+            onClick={onToggleTheme}
+            title={isDarkMode ? 'Switch to Clean Light Theme' : 'Switch to Dark Theme'}
+            className="p-1.5 sm:px-2 sm:py-1.5 rounded-lg border border-slate-200 dark:border-dark-800 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors flex items-center gap-1.5"
+          >
+            {isDarkMode ? (
+              <>
+                <Sun className="w-4 h-4 text-amber-400" />
+                <span className="hidden xl:inline text-[11px] font-mono">Light</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+                <span className="hidden xl:inline text-[11px] font-mono">Dark</span>
+              </>
+            )}
+          </button>
+        )}
+
         {/* Park Distraction Button */}
         <button
           onClick={onOpenParkingLot}

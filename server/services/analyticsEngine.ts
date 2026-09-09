@@ -1,5 +1,5 @@
 import { prisma } from '../db.js';
-import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval, parseISO } from 'date-fns';
+import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval, parseISO, startOfMonth, endOfMonth, getDate } from 'date-fns';
 
 export interface ConsistencyStats {
   todayTargetHours: number;
@@ -269,4 +269,164 @@ export class AnalyticsEngine {
       };
     });
   }
+
+  static async getCumulativeGrowthMetrics(monthStr?: string) {
+    const today = new Date();
+    const todayStr = format(today, 'yyyy-MM-dd');
+    const targetMonthStr = monthStr || format(today, 'yyyy-MM');
+    const monthDate = parseISO(`${targetMonthStr}-01`);
+    const startDate = startOfMonth(monthDate);
+    const endDate = endOfMonth(monthDate);
+    const monthDays = eachDayOfInterval({ start: startDate, end: endDate });
+    const totalDays = monthDays.length;
+
+    // Fetch Solved DSA Questions
+    const dsaSolvedQuestions = await prisma.dSAQuestion.findMany({
+      where: { status: 'SOLVED' },
+    });
+
+    // Map DSA questions solved by date (YYYY-MM-DD)
+    const dsaByDate = new Map<string, typeof dsaSolvedQuestions>();
+    for (const q of dsaSolvedQuestions) {
+      if (q.dateSolved) {
+        const dStr = format(new Date(q.dateSolved), 'yyyy-MM-dd');
+        const list = dsaByDate.get(dStr) || [];
+        list.push(q);
+        dsaByDate.set(dStr, list);
+      }
+    }
+
+    // Fetch Completed Project Features
+    const completedFeatures = await prisma.projectFeature.findMany({
+      where: {
+        OR: [
+          { status: 'COMPLETE' },
+          { progress: 100 }
+        ]
+      },
+    });
+
+    // Map Completed Features by date (YYYY-MM-DD)
+    const featuresByDate = new Map<string, typeof completedFeatures>();
+    for (const f of completedFeatures) {
+      const dStr = format(new Date(f.updatedAt || f.createdAt), 'yyyy-MM-dd');
+      const list = featuresByDate.get(dStr) || [];
+      list.push(f);
+      featuresByDate.set(dStr, list);
+    }
+
+    // Fetch All Work Sessions in this month
+    const allSessions = await prisma.workSession.findMany();
+    const sessionsByDate = new Map<string, typeof allSessions>();
+    for (const s of allSessions) {
+      const list = sessionsByDate.get(s.date) || [];
+      list.push(s);
+      sessionsByDate.set(s.date, list);
+    }
+
+    let runningDsa = 0;
+    let runningProject = 0;
+    let totalMissedDays = 0;
+    let totalPenalties = 0;
+    let totalRecovered = 0;
+
+    const days = monthDays.map((d, index) => {
+      const dayIndex = index + 1;
+      const dateStr = format(d, 'yyyy-MM-dd');
+      const dayName = format(d, 'EEE');
+      const isPastOrToday = dateStr <= todayStr;
+      const isToday = dateStr === todayStr;
+
+      const solvedList = dsaByDate.get(dateStr) || [];
+      const dsaSolved = solvedList.length;
+
+      const featList = featuresByDate.get(dateStr) || [];
+      const featuresDeployed = featList.length;
+
+      const sessions = sessionsByDate.get(dateStr) || [];
+      const totalMinutes = sessions.reduce((acc, s) => acc + s.durationMinutes, 0);
+
+      let isMissed = false;
+      let dsaPenalty = 0;
+      let dsaDelta = 0;
+      let projectDelta = 0;
+
+      if (isPastOrToday) {
+        // DSA Logic:
+        // If DSA problems solved, +dsaSolved (e.g. 2 problems -> +2)
+        if (dsaSolved > 0) {
+          dsaDelta = dsaSolved;
+          if (runningDsa < (dayIndex * (80 / totalDays))) {
+            totalRecovered += dsaSolved;
+          }
+        } else if (dateStr < todayStr && totalMinutes === 0 && dsaSolved === 0) {
+          // Missed day: -2 penalty and red dot
+          isMissed = true;
+          dsaPenalty = -2;
+          dsaDelta = -2;
+          totalMissedDays += 1;
+          totalPenalties += 2;
+        } else {
+          dsaDelta = 0;
+        }
+
+        runningDsa = Math.max(0, runningDsa + dsaDelta);
+
+        // Project Logic:
+        // Each completed/deployed step in the 25-step MVP tracker gives +4% progress (25 * 4 = 100%)
+        if (featuresDeployed > 0) {
+          projectDelta = featuresDeployed * 4;
+        }
+        runningProject = Math.min(100, runningProject + projectDelta);
+      }
+
+      // Linear Target Paces:
+      // DSA Target Goal: 80 questions in September
+      const dsaTargetPace = Math.min(80, Math.round((80 / totalDays) * dayIndex));
+      // Project Target Goal: 100% in September
+      const projectTargetPace = Math.min(100, Math.round((100 / totalDays) * dayIndex));
+
+      return {
+        day: dayIndex,
+        date: dateStr,
+        dayName,
+        isPastOrToday,
+        isToday,
+        dsaSolved,
+        isMissed,
+        dsaPenalty,
+        dsaDelta,
+        dsaCumulative: isPastOrToday ? runningDsa : null,
+        dsaTargetPace,
+        dsaGoal: 80,
+        featuresDeployed,
+        projectDelta,
+        projectCumulative: isPastOrToday ? runningProject : null,
+        projectTargetPace,
+        projectGoal: 100,
+        totalMinutes,
+        taskTitles: sessions.map(s => s.taskTitle),
+      };
+    });
+
+    const currentDayNumber = getDate(today);
+
+    return {
+      month: targetMonthStr,
+      monthName: format(monthDate, 'MMMM yyyy'),
+      totalDays,
+      currentDay: currentDayNumber,
+      dsaTargetGoal: 80,
+      currentDsaCumulative: runningDsa,
+      dsaPercentOfGoal: Math.min(100, Math.round((runningDsa / 80) * 100)),
+      projectTargetGoal: 100,
+      currentProjectCumulative: runningProject,
+      projectPercentOfGoal: Math.min(100, Math.round((runningProject / 100) * 100)),
+      totalMissedDays,
+      totalPenalties,
+      totalRecovered,
+      days,
+    };
+  }
 }
+

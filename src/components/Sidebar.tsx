@@ -63,19 +63,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div>
           <div className="p-5 border-b border-dark-800/80 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center font-bold text-sm text-surface shadow-sm shadow-brand-500/20">
+              <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center font-bold text-sm text-white shadow-sm shadow-brand-500/20">
                 ⚡
               </div>
               <div>
-                <span className="font-bold tracking-tight text-sm text-white block">Focus</span>
-                <span className="text-[10px] font-mono text-slate-400 block -mt-0.5">Execution & Velocity</span>
+                <span className="font-bold tracking-tight text-sm text-slate-900 dark:text-white block">Focus</span>
+                <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 block -mt-0.5">Execution & Velocity</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {consistency && (
                 <div
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono font-bold"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400 text-xs font-mono font-bold"
                   title="Current Consistency Streak"
                 >
                   <Flame className="w-3.5 h-3.5 fill-current" />
@@ -104,8 +104,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={item.id}
                   onClick={() => handleSelectTab(item.id)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-all ${isActive
-                      ? 'bg-brand-600 text-surface font-bold shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-dark-800/70'
+                      ? 'bg-brand-600 text-white font-bold shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800/70'
                     }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -114,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                   {item.badge && (
                     <span
-                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${isActive ? 'bg-dark-950 text-white font-bold' : 'bg-dark-800 text-slate-400 border border-dark-700'
+                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${isActive ? 'bg-brand-700 text-white font-bold' : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-dark-700'
                         }`}
                     >
                       {item.badge}

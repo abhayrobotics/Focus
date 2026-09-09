@@ -45,7 +45,10 @@ dashboardRouter.get('/summary', async (req, res) => {
         progress: projectProgress,
         completedFeatures,
         totalFeatures,
-        nextAction: flagshipProject?.features.find((f) => f.status === 'DEVELOPMENT')?.nextAction || 'Implement forwarding workflow API',
+        nextAction:
+          flagshipProject?.features.find((f) => f.status === 'DEVELOPMENT' && f.nextAction)?.nextAction ||
+          flagshipProject?.features.find((f) => f.status === 'PLANNED' && f.nextAction)?.nextAction ||
+          'Implement forwarding workflow API',
       },
       dsaSnapshot: {
         total: totalDsa,

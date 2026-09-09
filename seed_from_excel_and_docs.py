@@ -32,6 +32,21 @@ rows = raw_data[1:]
 
 print(f"Total rows in Excel: {len(rows)}")
 
+# Ensure leetcodeNumber column exists in SQLite table
+try:
+    cur.execute("ALTER TABLE DSAQuestion ADD COLUMN leetcodeNumber INTEGER")
+except Exception:
+    pass
+
+# Read existing user progress before updating
+existing_progress = {}
+try:
+    cur.execute("SELECT number, status, solvedMyself, solution, approach, mistake, timeComplexity, spaceComplexity, dateSolved, needsRevision, revisionNotes FROM DSAQuestion WHERE userId = ?", (user_id,))
+    for r in cur.fetchall():
+        existing_progress[r[0]] = r
+except Exception:
+    pass
+
 # Clear old questions
 cur.execute("DELETE FROM DSAQuestion WHERE userId = ?", (user_id,))
 
@@ -40,14 +55,16 @@ def get_col(row, idx, default=''):
 
 def make_slug(title):
     clean = re.sub(r'[^a-zA-Z0-9\s-]', '', title).strip().lower()
-    return re.sub(r'[\s_]+', '-', clean)
+    clean = re.sub(r'[\s_]+', '-', clean)
+    return re.sub(r'-+', '-', clean)
 
 questions_to_insert = []
 for idx, r in enumerate(rows):
     sl_no = int(get_col(r, 0, str(idx + 1)))
     phase = get_col(r, 1, 'Phase 1A')
     leetcode_num_str = get_col(r, 2, str(sl_no))
-    leetcode_num = int(re.sub(r'[^0-9]', '', leetcode_num_str)) if re.sub(r'[^0-9]', '', leetcode_num_str) else sl_no
+    leetcode_num_digits = re.sub(r'[^0-9]', '', leetcode_num_str)
+    leetcode_num = int(leetcode_num_digits) if leetcode_num_digits else None
     topic = get_col(r, 3, 'Arrays')
     pattern = get_col(r, 4, '')
     problem_name = get_col(r, 5, f"Problem {sl_no}")
@@ -79,36 +96,61 @@ for idx, r in enumerate(rows):
     slug = make_slug(problem_name)
     problem_url = f"https://leetcode.com/problems/{slug}/"
 
+    # If user already solved or modified this question, preserve their progress!
+    if sl_no in existing_progress:
+        ex = existing_progress[sl_no]
+        # ex indices: 0:number, 1:status, 2:solvedMyself, 3:solution, 4:approach, 5:mistake, 6:timeComp, 7:spaceComp, 8:dateSolved, 9:needsRevision, 10:revisionNotes
+        db_status = ex[1] if ex[1] else db_status
+        solved_myself = ex[2] if ex[2] is not None else 1
+        solution = ex[3]
+        if ex[4]:
+            full_approach = ex[4]
+        if ex[5]:
+            mistake = ex[5]
+        if ex[6]:
+            time_comp = ex[6]
+        if ex[7]:
+            space_comp = ex[7]
+        date_solved = ex[8]
+        needs_revision = ex[9] if ex[9] is not None else needs_revision
+        revision_notes = ex[10]
+    else:
+        solved_myself = 1
+        solution = None
+        date_solved = None
+        revision_notes = None
+
     q_id = f"dsa_{sl_no:03d}"
     questions_to_insert.append((
         q_id,
         user_id,
         sl_no,
+        leetcode_num,
         full_topic,
         problem_name,
         difficulty,
         problem_url,
         db_status,
-        1, # solvedMyself
-        None, # solution
+        solved_myself,
+        solution,
         full_approach,
         mistake if mistake else None,
         time_comp if time_comp else 'O(N)',
         space_comp if space_comp else 'O(1)',
-        None, # dateSolved
+        date_solved,
         needs_revision,
-        None, # revisionNotes
+        revision_notes,
     ))
 
 cur.executemany("""
 INSERT INTO DSAQuestion (
-    id, userId, number, topic, title, difficulty, problemUrl, status,
+    id, userId, number, leetcodeNumber, topic, title, difficulty, problemUrl, status,
     solvedMyself, solution, approach, mistake, timeComplexity, spaceComplexity,
     dateSolved, needsRevision, revisionNotes, createdAt, updatedAt
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
 """, questions_to_insert)
 
-print(f"✅ Successfully inserted {len(questions_to_insert)} questions from Master Career Tracker.xlsx into DSAQuestion table.")
+print(f"✅ Successfully inserted {len(questions_to_insert)} questions with official LeetCode numbers into DSAQuestion table.")
 
 # 3. Seed GridOps Project with Features from product thinking.docx & Grievance handling portal.docx
 cur.execute("DELETE FROM ProjectFeature WHERE projectId IN (SELECT id FROM Project WHERE userId = ?)", (user_id,))

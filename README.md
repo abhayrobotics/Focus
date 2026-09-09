@@ -1,4 +1,4 @@
-# CareerOS ⚡
+# Focus ⚡
 
 > **Personal Execution & Career Transition Operating System**  
 > *"Stop wasting time deciding what to study. Know what to do today, record what was actually done, and measure real progress."*
