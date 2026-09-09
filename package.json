@@ -10,6 +10,7 @@
     "build:client": "vite build",
     "build:server": "tsc -p server/tsconfig.json",
     "build": "npm run build:client && npm run build:server",
+    "vercel-build": "prisma generate && vite build",
     "start": "tsx server/index.ts",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
