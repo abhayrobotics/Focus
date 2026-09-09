@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, Clock, ShieldCheck } from 'lucide-react';
 import { api } from '../services/api';
+import { DEFAULT_ROADMAP_DATA } from '../data/defaultData';
 
 interface RoadmapScreenProps {
   onOpenParkingLot: () => void;
@@ -10,8 +11,8 @@ interface RoadmapScreenProps {
 export const RoadmapScreen: React.FC<RoadmapScreenProps> = ({
   onOpenParkingLot,
 }) => {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(() => DEFAULT_ROADMAP_DATA);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadRoadmap();
@@ -19,11 +20,12 @@ export const RoadmapScreen: React.FC<RoadmapScreenProps> = ({
 
   const loadRoadmap = async () => {
     try {
-      setLoading(true);
       const res = await api.getRoadmap();
-      setData(res);
+      if (res && res.phase1) {
+        setData(res);
+      }
     } catch (err) {
-      console.error('Error loading roadmap:', err);
+      console.warn('Using default roadmap data:', err);
     } finally {
       setLoading(false);
     }

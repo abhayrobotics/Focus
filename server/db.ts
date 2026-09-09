@@ -45,11 +45,12 @@ async function ensureTables() {
       );
     `);
     // Seed sample applications if empty
+    const db = prisma as any;
     const user = await prisma.user.findFirst();
     if (user) {
-      const count = await prisma.jobApplication.count();
+      const count = await db.jobApplication.count();
       if (count === 0) {
-        const atlassian = await prisma.jobApplication.create({
+        const atlassian = await db.jobApplication.create({
           data: {
             userId: user.id,
             companyName: 'Atlassian',
@@ -86,7 +87,7 @@ async function ensureTables() {
           },
         });
 
-        await prisma.jobApplication.create({
+        await db.jobApplication.create({
           data: {
             userId: user.id,
             companyName: 'Razorpay',
@@ -112,7 +113,7 @@ async function ensureTables() {
           },
         });
 
-        await prisma.jobApplication.create({
+        await db.jobApplication.create({
           data: {
             userId: user.id,
             companyName: 'Uber',

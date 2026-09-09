@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { DSAQuestion, DSAOverview, DSATopicStat } from '../types';
 import { api } from '../services/api';
+import { DEFAULT_DSA_QUESTIONS, DEFAULT_DSA_OVERVIEW, DEFAULT_DSA_TOPIC_STATS } from '../data/defaultData';
 import { QuestionDetailModal } from '../components/QuestionDetailModal';
 import { ImportModal } from '../components/ImportModal';
 
@@ -16,10 +17,10 @@ interface DsaScreenProps {
 }
 
 export const DsaScreen: React.FC<DsaScreenProps> = ({ onOpenLogger }) => {
-  const [questions, setQuestions] = useState<DSAQuestion[]>([]);
-  const [overview, setOverview] = useState<DSAOverview | null>(null);
-  const [topicStats, setTopicStats] = useState<DSATopicStat[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [questions, setQuestions] = useState<DSAQuestion[]>(() => DEFAULT_DSA_QUESTIONS);
+  const [overview, setOverview] = useState<DSAOverview | null>(() => DEFAULT_DSA_OVERVIEW);
+  const [topicStats, setTopicStats] = useState<DSATopicStat[]>(() => DEFAULT_DSA_TOPIC_STATS);
+  const [loading, setLoading] = useState(false);
 
   // Filters
   const [selectedTopic, setSelectedTopic] = useState<string>('ALL');

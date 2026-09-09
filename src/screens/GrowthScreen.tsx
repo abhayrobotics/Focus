@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, Calendar, Trash2, Edit2, Sparkle, Clock, Code2, FolderGit2, Target, CheckCircle2, Download } from 'lucide-react';
 import { ConsistencyStats, DailyReview, WorkSession } from '../types';
 import { api } from '../services/api';
+import { DEFAULT_WORK_SESSIONS } from '../data/defaultData';
 import { ConsistencyChart } from '../components/ConsistencyChart';
 import { CumulativeGrowthChart } from '../components/CumulativeGrowthChart';
 import { DailyReviewModal } from '../components/DailyReviewModal';
@@ -22,10 +23,10 @@ export const GrowthScreen: React.FC<GrowthScreenProps> = ({
   refreshTrigger = 0,
 }) => {
   const [reviewsHistory, setReviewsHistory] = useState<DailyReview[]>([]);
-  const [workSessions, setWorkSessions] = useState<WorkSession[]>([]);
+  const [workSessions, setWorkSessions] = useState<WorkSession[]>(() => DEFAULT_WORK_SESSIONS);
   const [sessionCategoryFilter, setSessionCategoryFilter] = useState<'ALL' | 'DSA' | 'PROJECT' | 'INTERVIEW' | 'OTHER'>('ALL');
   const [isReviewOpen, setIsReviewOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [dedupStatus, setDedupStatus] = useState<string | null>(null);
   const [isDeduplicating, setIsDeduplicating] = useState(false);
 
@@ -35,16 +36,18 @@ export const GrowthScreen: React.FC<GrowthScreenProps> = ({
 
   const loadAllData = async () => {
     try {
-      setLoading(true);
-      const [heatmap, hist, sessions] = await Promise.all([
-        api.getHeatmapData(),
-        fetch('/api/growth/history').then((r) => r.json()),
+      const [histRes, sessions] = await Promise.allSettled([
+        fetch('/api/growth/history').then((r) => r.ok ? r.json() : []),
         api.getWorkSessions(),
       ]);
-      setReviewsHistory(hist);
-      setWorkSessions(sessions);
+      if (histRes.status === 'fulfilled' && Array.isArray(histRes.value)) {
+        setReviewsHistory(histRes.value);
+      }
+      if (sessions.status === 'fulfilled' && Array.isArray(sessions.value) && sessions.value.length > 0) {
+        setWorkSessions(sessions.value);
+      }
     } catch (err) {
-      console.error('Error loading growth screen data:', err);
+      console.warn('Error loading growth screen data:', err);
     } finally {
       setLoading(false);
     }

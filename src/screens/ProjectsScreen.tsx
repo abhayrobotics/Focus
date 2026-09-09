@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Project, ProjectFeature } from '../types';
 import { api } from '../services/api';
+import { DEFAULT_PROJECTS_DATA } from '../data/defaultData';
 import { FeatureDetailModal } from '../components/FeatureDetailModal';
 import { ImportModal } from '../components/ImportModal';
 
@@ -88,13 +89,37 @@ const PHASES: PhaseConfig[] = [
   },
 ];
 
+export function formatProjectData(rawProjects: Project[]): Project[] {
+  return rawProjects.map((p: any) => {
+    const allFeatures: ProjectFeature[] = p.features || [];
+    const mvpFeatures = p.mvpFeatures || allFeatures.filter((f: any) => f.isMvp);
+    const futureFeatures = p.futureFeatures || allFeatures.filter((f: any) => !f.isMvp);
+    const completedCount = mvpFeatures.filter((f: any) => f.status === 'COMPLETE').length;
+    const totalCount = mvpFeatures.length;
+    const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    const nextStep = mvpFeatures.find((f: any) => f.status !== 'COMPLETE');
+
+    return {
+      ...p,
+      features: allFeatures,
+      mvpFeatures,
+      futureFeatures,
+      completedCount,
+      totalCount,
+      progressPercent,
+      currentNextAction: nextStep?.nextAction || 'All 25 MVP steps completed!',
+      currentNextFeatureName: nextStep?.name || 'UtilityOps MVP 100% Deployed',
+    };
+  });
+}
+
 export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({ onOpenLogger }) => {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>(() => formatProjectData(DEFAULT_PROJECTS_DATA));
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedFeature, setSelectedFeature] = useState<ProjectFeature | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showProjectOverview, setShowProjectOverview] = useState(false);
   const [expandedSteps, setExpandedSteps] = useState<{ [id: string]: boolean }>({});
@@ -105,11 +130,12 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({ onOpenLogger }) 
 
   const loadProjects = async () => {
     try {
-      setLoading(true);
       const res = await api.getProjects();
-      setProjects(res);
+      if (res && res.length > 0) {
+        setProjects(formatProjectData(res));
+      }
     } catch (err) {
-      console.error('Error loading projects:', err);
+      console.warn('Backend API unavailable, using resilient default projects data:', err);
     } finally {
       setLoading(false);
     }

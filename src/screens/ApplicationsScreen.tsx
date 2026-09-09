@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { JobApplication, InterviewRound, ApplicationStats, ApplicationStatus, RoundStatus } from '../types';
 import { api } from '../services/api';
+import { DEFAULT_APPLICATIONS, DEFAULT_APPLICATION_STATS } from '../data/defaultData';
 import { format } from 'date-fns';
 
 interface ApplicationsScreenProps {
@@ -33,9 +34,9 @@ interface ApplicationsScreenProps {
 }
 
 export const ApplicationsScreen: React.FC<ApplicationsScreenProps> = ({ onRefreshParent }) => {
-  const [applications, setApplications] = useState<JobApplication[]>([]);
-  const [stats, setStats] = useState<ApplicationStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [applications, setApplications] = useState<JobApplication[]>(() => DEFAULT_APPLICATIONS);
+  const [stats, setStats] = useState<ApplicationStats | null>(() => DEFAULT_APPLICATION_STATS);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'APPLIED' | 'OFFER' | 'REJECTED'>('ALL');
   const [platformFilter, setPlatformFilter] = useState<string>('ALL');

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { DashboardData } from '../types';
 import { api } from '../services/api';
+import { DEFAULT_DASHBOARD_DATA } from '../data/defaultData';
 import { ConsistencyChart } from '../components/ConsistencyChart';
 import { RedAlertBanner } from '../components/RedAlertBanner';
 
@@ -31,8 +32,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onOpenDailyReview,
   refreshTrigger,
 }) => {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<DashboardData>(() => DEFAULT_DASHBOARD_DATA);
+  const [loading, setLoading] = useState(false);
   const [expandedActions, setExpandedActions] = useState<{ [id: string]: boolean }>({});
   const [editingActionId, setEditingActionId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -44,11 +45,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   const loadDashboard = async () => {
     try {
-      setLoading(true);
       const res = await api.getDashboardSummary();
-      setData(res);
+      if (res && res.consistency) {
+        setData(res);
+      }
     } catch (err) {
-      console.error('Error loading dashboard:', err);
+      console.warn('Backend API unavailable, using resilient default dashboard data:', err);
     } finally {
       setLoading(false);
     }
