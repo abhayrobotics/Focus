@@ -2,51 +2,20 @@ import { PrismaClient } from '@prisma/client';
 
 export const prisma = new PrismaClient();
 
-// Ensure SQLite tables for JobApplication and InterviewRound exist
+// Ensure initial user and sample data exist
 async function ensureTables() {
   try {
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "JobApplication" (
-        "id" TEXT NOT NULL PRIMARY KEY,
-        "userId" TEXT NOT NULL,
-        "companyName" TEXT NOT NULL,
-        "role" TEXT NOT NULL,
-        "location" TEXT DEFAULT 'Remote',
-        "salaryRange" TEXT,
-        "platform" TEXT DEFAULT 'LINKEDIN',
-        "jobUrl" TEXT,
-        "resumeVersion" TEXT,
-        "appliedDate" TEXT NOT NULL,
-        "status" TEXT DEFAULT 'APPLIED',
-        "contactPerson" TEXT,
-        "contactEmail" TEXT,
-        "notes" TEXT,
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-      );
-    `);
+    let user = await prisma.user.findFirst();
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          id: 'usr_main_01',
+          name: 'Engineer',
+        },
+      });
+    }
 
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "InterviewRound" (
-        "id" TEXT NOT NULL PRIMARY KEY,
-        "applicationId" TEXT NOT NULL,
-        "roundNumber" INTEGER NOT NULL DEFAULT 1,
-        "roundName" TEXT NOT NULL,
-        "status" TEXT DEFAULT 'SCHEDULED',
-        "scheduledAt" DATETIME,
-        "interviewerName" TEXT,
-        "questionsAsked" TEXT,
-        "feedback" TEXT,
-        "notes" TEXT,
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY ("applicationId") REFERENCES "JobApplication" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-      );
-    `);
-    // Seed sample applications if empty
     const db = prisma as any;
-    const user = await prisma.user.findFirst();
     if (user) {
       const count = await db.jobApplication.count();
       if (count === 0) {
